@@ -27,6 +27,17 @@ from api.ovms_connector import OvmsUnavailableError, ModelNotFoundError
 
 logger = get_logger(__name__)
 
+
+class LabelsFileLoadingError(ValueError):
+    pass
+
+class LabelsFileContentError(Exception):
+    pass
+
+class LabelsFileFormatError(Exception):
+    pass
+
+
 class Model(ABC):
 
     def __init__(self, model_name, ovms_connector, labels_path):
@@ -35,15 +46,27 @@ class Model(ABC):
         self.labels = self.load_labels(labels_path)
 
     def load_labels(self, labels_path):
+        labels = dict()
+
         try:                                                                          
-            with open(labels_path, 'r') as labels_file:                               
-                data = json.load(labels_file)
-                labels = dict()
-                for output in data['outputs']: 
-                    labels[output["output_name"]] = output['classes']
+            labels_file = open(labels_path, 'r') 
         except Exception as e:                                                        
             logger.exception("Error occurred while opening labels file: {}".format(e))
-            sys.exit(1)
+            raise LabelsFileLoadingError("Error occurred while opening labels file") from e
+
+        try:
+             data = json.load(labels_file)
+        except Exception as e:                                                        
+             logger.exception("Error occurred while loading json from labels file: {}".format(e))
+             raise LabelsFileFormatError("Error occurred while loading json from labels file") from e
+
+        try:
+             for output in data['outputs']: 
+                labels[output["output_name"]] = output['classes']
+        except Exception as e:                                                        
+             logger.exception("Error occurred while loading classes from labels file: {}".format(e))
+             raise LabelsFileContentError("Error occurred while loading classes from labels file") from e
+
         return labels
 
     def preprocess_binary_image(self, binary_image: bytes) -> np.ndarray:
