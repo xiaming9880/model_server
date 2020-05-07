@@ -18,6 +18,7 @@ import pytest
 import os
 from src.api.models.model import Model, LabelsFileLoadingError, LabelsFileContentError, LabelsFileFormatError
 from src.api.models.vehicle_detection_adas_model import VehicleDetectionAdas
+from json import JSONDecodeError
 
 IMAGES_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'labels_files')
 
@@ -34,16 +35,16 @@ def test_model_object():
 
 
 def test_bad_json_loading():
-    with pytest.raises(LabelsFileFormatError):
+    with pytest.raises(JSONDecodeError):
          test_model = VehicleDetectionAdas("test-model","ovms-connector",bad_json_path)
 
 
 def test_bad_path_loading():
-    with pytest.raises(LabelsFileLoadingError):
+    with pytest.raises(FileNotFoundError):
          test_model = VehicleDetectionAdas("test-model","ovms-connector", bad_path)
         
 
 def test_bad_format_loading():
-    with pytest.raises(LabelsFileFormatError):
+    with pytest.raises(KeyError):
          test_model = VehicleDetectionAdas("test-model","ovms-connector",bad_labels_path)
 
