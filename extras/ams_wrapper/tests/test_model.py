@@ -15,11 +15,21 @@
 #
 
 import json
-
+import os
 import pytest
 
 from src.api.models.model import Model
 from src.api.models.input_config import ValidationError
+from json import JSONDecodeError
+from src.api.models.vehicle_detection_adas_model import VehicleDetectionAdas
+
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+    'labels_files')
+adas_json_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+    "../../ams_models/vehicle_detection_adas_model.json")
+bad_json_path = os.path.join(IMAGES_DIR,"bad_json.json")
+bad_path = os.path.join(IMAGES_DIR,"bad_path.json")
+bad_labels_path = os.path.join(IMAGES_DIR,"bad_labels.json")
 
 
 @pytest.fixture()
@@ -108,3 +118,27 @@ def test_model_load_non_existing_input_config():
     with pytest.raises(ValueError):
         Model.load_input_configs('/not-existing-path')
 
+
+def test_model_object():
+    test_model = VehicleDetectionAdas("test-model","ovms-connector",
+                                      adas_json_path)
+    assert test_model.model_name == "test-model"
+    assert test_model.ovms_connector == "ovms-connector"
+
+
+def test_bad_json_loading():
+    with pytest.raises(JSONDecodeError):
+         test_model = VehicleDetectionAdas("test-model","ovms-connector",
+                                           bad_json_path)
+
+
+def test_bad_path_loading():
+    with pytest.raises(FileNotFoundError):
+         test_model = VehicleDetectionAdas("test-model","ovms-connector",
+                                           bad_path)
+
+
+def test_bad_format_loading():
+    with pytest.raises(KeyError):
+         test_model = VehicleDetectionAdas("test-model","ovms-connector",
+                                           bad_labels_path)
