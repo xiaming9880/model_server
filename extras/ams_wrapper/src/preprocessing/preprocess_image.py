@@ -20,7 +20,7 @@ from typing import Tuple
 import tensorflow as tf
 import numpy as np
 
-from logger import get_logger
+from src.logger import get_logger
 
 
 log = get_logger(__name__)
@@ -41,7 +41,7 @@ class ImageTransformError(ValueError):
 def preprocess_binary_image(image: bytes, channels: int = None,
                             target_size: Tuple[int, int] = None,
                             channels_first=True,
-                            dtype=tf.dtypes.uint8, scale: float = None,
+                            dtype=tf.dtypes.float32, scale: float = None,
                             standardization=False,
                             reverse_input_channels=True) -> np.ndarray:
     """
@@ -88,7 +88,8 @@ def preprocess_binary_image(image: bytes, channels: int = None,
         raise TypeError('Invalid type {} for parameter dtype.'.format(type(dtype)))
 
     try:
-        decoded_image = tf.io.decode_image(image, channels=channels, dtype=dtype)
+        decoded_image = tf.io.decode_image(image, channels=channels)
+        tf.dtypes.cast(decoded_image, dtype)
     except Exception as e:
         raise ImageDecodeError('Provided image is invalid, unable to decode.') from e
 

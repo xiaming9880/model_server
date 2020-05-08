@@ -14,36 +14,35 @@
 # limitations under the License.
 #
 
+from abc import ABC, abstractmethod
 import datetime
 import json
+import sys
+from typing import Dict
+
 import falcon
 import tensorflow as tf
 import sys
 import numpy as np
-from abc import ABC, abstractmethod
-from logger import get_logger
-from preprocessing.preprocess_image import preprocess_binary_image as default_preprocessing
-from api.ovms_connector import OvmsUnavailableError, ModelNotFoundError
+
+from src.logger import get_logger
+from src.preprocessing.preprocess_image import preprocess_binary_image as default_preprocessing
+from src.api.ovms_connector import OvmsUnavailableError, ModelNotFoundError, OvmsConnector
+from src.api.models.input_config import ModelInputConfiguration, \
+    ModelInputConfigurationSchema, ValidationError
 
 logger = get_logger(__name__)
 
 
-class LabelsFileLoadingError(FileNotFoundError):
-    pass
-
-class LabelsFileContentError(ValueError):
-    pass
-
-class LabelsFileFormatError(KeyError):
-    pass
-
-
 class Model(ABC):
-
-    def __init__(self, model_name, ovms_connector, labels_path):
+    def __init__(self, model_name: str, ovms_connector: OvmsConnector,
+                 labels_path: str, config_file_path: str = None):
         self.ovms_connector = ovms_connector
         self.model_name = model_name
         self.labels = self.load_labels(labels_path)
+        self.input_configs: Dict[str, ModelInputConfiguration] = None # load input configuration
+        if config_file_path:
+            self.input_configs = self.load_input_configs(config_file_path)
 
     def load_labels(self, labels_path):
         labels = dict()
@@ -165,3 +164,37 @@ class Model(ABC):
         resp.body = results
         return
 
+    @staticmethod
+    def load_input_configs(config_file_path: str) -> Dict[str, ModelInputConfiguration]:
+        """
+        :raises ValueError: when loading of configuration file fails
+        :raises marshmallow.ValidationError: if input configuration has invalid schema
+        :returns: a dictionary where key is the input name and value
+                 is ModelInputConfiguration for given input
+        """
+        try:
+            with open(config_file_path, mode='r') as config_file:
+                config = json.load(config_file)
+        except FileNotFoundError as e:
+            # TODO: think what exactly should we do in this case
+            logger.exception('Model\'s configuration file {} was not found.'.format(config_file_path))
+            raise ValueError from e
+        except Exception as e:
+            logger.exception('Failed to load Model\'s configuration file {}.'.format(config_file_path))
+            raise ValueError from e
+        
+        model_input_configs = {}
+        input_config_schema = ModelInputConfigurationSchema()
+        
+        for input_config_dict in config.get('inputs'):
+            try:
+                input_config = input_config_schema.load(input_config_dict)
+            except ValidationError:
+                logger.exception('Model input configuration is invalid: {}'.format(input_config_dict))
+                raise
+
+            model_input_configs[input_config.input_name] = input_config
+        
+        return model_input_configs
+
+        
