@@ -65,7 +65,6 @@ pipeline {
     }
     post {
         always {
-                steps {
                     emailext body: "" +
                             "${currentBuild.currentResult}: Job ${env.JOB_NAME}, build ${env.BUILD_NUMBER}\n" +
                             "From Jenkins ${env.JENKINS_URL}\n\n" +
@@ -76,10 +75,8 @@ pipeline {
                             "More info at: ${env.BUILD_URL}",
                             recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider'], [$class: 'CulpritsRecipientProvider']],
                             subject: "Jenkins Build ${currentBuild.currentResult}: Job ${env.JOB_NAME}"
-                }
         }
         success {
-                steps {
                     publishHTML target: [
                         allowMissing: true,
                         alwaysLinkToLastBuild: false,
@@ -88,7 +85,6 @@ pipeline {
                         reportFiles: 'index.html',
                         reportName: 'RCov Report'
                     ]
-                }
         }
     }
 }
