@@ -81,9 +81,8 @@ pipeline {
                         allowMissing: true,
                         alwaysLinkToLastBuild: false,
                         keepAll: true,
-                        reportDir: 'coverage',
-                        reportFiles: 'index.html',
-                        reportName: 'RCov Report'
+                        reportDir: 'ams_coverage_report',
+                        reportName: 'ams report'
                     ]
         }
     }
