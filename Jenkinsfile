@@ -62,6 +62,19 @@ pipeline {
                 */
             }
         }
+
+        stage('Publish HTML Report') {
+            steps  {
+                publishHTML target: [
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: false,
+                    keepAll: true,
+                    reportDir: 'ams_coverage_report',
+                    reportFiles: 'index.html',
+                    reportName: 'ams report'
+                ]
+            }
+        }
     }
     post {
         always {
@@ -75,15 +88,6 @@ pipeline {
                             "More info at: ${env.BUILD_URL}",
                             recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider'], [$class: 'CulpritsRecipientProvider']],
                             subject: "Jenkins Build ${currentBuild.currentResult}: Job ${env.JOB_NAME}"
-        }
-        success {
-                    publishHTML target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: true,
-                        reportDir: 'ams_coverage_report',
-                        reportName: 'ams report'
-                    ]
         }
     }
 }
