@@ -88,4 +88,4 @@ EMOTION_RECOGNITION = {"model_name": "emotionsRecognition", "width": "64", "heig
                        "input_name": "data"}
 
 MODELS = [VEHICLE_DETECTION, VEHICLE_ATTRIBUTES, FACE_DETECTION,
-          PERSON_DETECTION, AGE_RECOGNITION, EMOTION_RECOGNITION]
+          PERSON_DETECTION]

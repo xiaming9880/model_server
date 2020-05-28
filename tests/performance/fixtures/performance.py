@@ -34,7 +34,7 @@ def read_and_rewrite_file(filename: str, filename_to_save: str, **kwargs):
 def prepare_image_ams(nireq, plugin_config, grpc_workers):
     copy_config_file_ams(nireq=nireq, plugin_config=plugin_config)
     edit_ams_start_script(grpc_workers=grpc_workers)
-    cmd = ["make", "docker_build_ams", "DLDT_PACKAGE_URL={}".format(DLDT_PACKAGE)]
+    cmd = ["make", "docker_build_ams_clearlinux", "DLDT_PACKAGE_URL={}".format(DLDT_PACKAGE)]
     subprocess.run(cmd)
 
 
