@@ -1,6 +1,6 @@
-# Architecture Concept
+# Architecture
 
-The OpenVINO&trade; model server is a Python* implementation of the gRPC and RESTful API interfaces defined by TensorFlow* serving. These interfaces don't include authorization, authentication, or data encryption functions. Those functions are expected to be implemented outside of the model server, such as through Kubernetes* ingress or nginx forwarding proxy. As an option, you can add the functions to the gRPC interface in the OpenVINO model server. This optoin is out of scope for this documentation.
+The OpenVINO&trade; model server is a Python* implementation of the gRPC and RESTful API interfaces defined by TensorFlow* serving. These interfaces don't include authorization, authentication, or data encryption functions. You can implement these functions outside of the model server, such as through Kubernetes* ingress or the nginx forwarding proxy. As an option, you can add the functions to the gRPC interface in the OpenVINO model server. This optoin is out of scope for this documentation.
 
 The back end of the OpenVINO model server uses the Inference Engine libraries from the OpenVINO&trade; toolkit, which speeds CPU execution and enables rhw OpenVINO model server on FPGA and Intel® Movidius&trade; devices. 
 
