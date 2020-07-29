@@ -8,6 +8,7 @@ The gRPC code skeleton is based on the proto-buffer API definition and is genera
 
 
 ![architecture chart](serving.png)
+
 **Figure 1: Docker Container (VM or Bare Metal Host)**
 
 You can host the OpenVINO model server on:
