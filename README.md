@@ -161,5 +161,3 @@ Submit Github issue to ask question, request a feature or report a bug.
 ---
 \* Other names and brands may be claimed as the property of others.
 
-
-
