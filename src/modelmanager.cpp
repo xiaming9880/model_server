@@ -167,8 +167,11 @@ void processPipelineConfig(rapidjson::Document& configJson, const rapidjson::Val
         std::string nodeName;
         nodeName = nodeConfig["name"].GetString();
 
-        std::string modelName;
-        modelName = nodeConfig["model_name"].GetString();
+        std::string modelName, lib;
+        if (nodeConfig.HasMember("model_name"))
+            modelName = nodeConfig["model_name"].GetString();
+        if (nodeConfig.HasMember("lib"))
+            lib = nodeConfig["lib"].GetString();
 
         const std::string nodeKindStr = nodeConfig["type"].GetString();
         auto nodeOutputsItr = nodeConfig.FindMember("outputs");
@@ -178,6 +181,9 @@ void processPipelineConfig(rapidjson::Document& configJson, const rapidjson::Val
         }
         std::unordered_map<std::string, std::string> nodeOutputNameAlias;  // key:alias, value realName
         processNodeOutputs(nodeOutputsItr, nodeName, modelName, nodeOutputNameAlias);
+        for (const auto& [v1, v2] : nodeOutputNameAlias) {
+            spdlog::info("----- {}, {}, {}", nodeName, v1, v2);
+        }
         std::optional<model_version_t> modelVersion;
         if (nodeConfig.HasMember("version")) {
             modelVersion = nodeConfig["version"].GetUint64();
@@ -190,9 +196,9 @@ void processPipelineConfig(rapidjson::Document& configJson, const rapidjson::Val
             SPDLOG_ERROR("There was error while parsing node kind:{}", nodeKindStr);
             return;
         }
-        SPDLOG_INFO("Creating node:{} type:{} model_name:{} modelVersion:{}",
-            nodeName, nodeKindStr, modelName, modelVersion.value_or(0));
-        info.emplace_back(std::move(NodeInfo{nodeKind, nodeName, modelName, modelVersion, nodeOutputNameAlias}));
+        SPDLOG_INFO("Creating node:{} type:{} model_name:{} modelVersion:{} lib:{}",
+            nodeName, nodeKindStr, modelName, modelVersion.value_or(0), lib);
+        info.emplace_back(std::move(NodeInfo{nodeKind, nodeName, modelName, modelVersion, nodeOutputNameAlias, lib}));
         auto nodeInputItr = nodeConfig.FindMember("inputs");
         processNodeInputs(nodeName, nodeInputItr, connections);
     }

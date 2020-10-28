@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "custom_node.hpp"
 #include "dl_node.hpp"
 #include "entry_node.hpp"
 #include "exit_node.hpp"

@@ -24,6 +24,10 @@ Status toNodeKind(const std::string& str, NodeKind& nodeKind) {
         nodeKind = NodeKind::DL;
         return StatusCode::OK;
     }
+    if (str == "custom") {
+        nodeKind = NodeKind::CUSTOM;
+        return StatusCode::OK;
+    }
     SPDLOG_ERROR("Unsupported node type:{}", str);
     return StatusCode::PIPELINE_NODE_WRONG_KIND_CONFIGURATION;
 }
@@ -32,6 +36,7 @@ Status PipelineDefinition::create(std::unique_ptr<Pipeline>& pipeline,
     const tensorflow::serving::PredictRequest* request,
     tensorflow::serving::PredictResponse* response,
     ModelManager& manager) const {
+    spdlog::info("PipelineDefinition::create");
     std::unordered_map<std::string, std::unique_ptr<Node>> nodes;
 
     EntryNode* entry = nullptr;
@@ -57,6 +62,12 @@ Status PipelineDefinition::create(std::unique_ptr<Pipeline>& pipeline,
             auto node = std::make_unique<ExitNode>(response);
             exit = node.get();
             nodes.insert(std::make_pair(info.nodeName, std::move(node)));
+            break;
+        }
+        case NodeKind::CUSTOM: {
+            nodes.insert(std::make_pair(info.nodeName, std::move(std::make_unique<CustomNode>(info.nodeName,
+                                                           info.lib,
+                                                           info.outputNameAliases))));
             break;
         }
         default:
@@ -303,6 +314,7 @@ Status PipelineFactory::create(std::unique_ptr<Pipeline>& pipeline,
     const tensorflow::serving::PredictRequest* request,
     tensorflow::serving::PredictResponse* response,
     ModelManager& manager) const {
+    spdlog::info("PipelineFactory::create");
     if (!definitionExists(name)) {
         SPDLOG_INFO("Pipeline with requested name:{} does not exist", name);
         return StatusCode::PIPELINE_DEFINITION_NAME_MISSING;

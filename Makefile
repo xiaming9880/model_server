@@ -188,6 +188,14 @@ endif
     	-t $(OVMS_CPP_DOCKER_IMAGE)-gpu:$(OVMS_CPP_IMAGE_TAG) && \
     	docker tag $(OVMS_CPP_DOCKER_IMAGE)-gpu:$(OVMS_CPP_IMAGE_TAG) $(OVMS_CPP_DOCKER_IMAGE):$(OVMS_CPP_IMAGE_TAG)-gpu
 
+.PHONY: docker_plugin
+docker_plugin:
+	@echo "Building plugin"
+
+	docker build $(NO_CACHE_OPTION) -f Dockerfile.plugin . \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) --build-arg no_proxy=$(NO_PROXY) \
+		-t ovms-plugin
+
 test_checksec:
 	@echo "Running checksec on ovms binary..."
 	@docker create -ti --name $(OVMS_CPP_CONTAINTER_NAME) $(OVMS_CPP_DOCKER_IMAGE)-pkg:$(OVMS_CPP_IMAGE_TAG) bash

@@ -37,6 +37,7 @@ using pipeline_connections_t = std::unordered_map<std::string, std::unordered_ma
 enum class NodeKind {
     ENTRY,
     DL,
+    CUSTOM,
     EXIT
 };
 
@@ -48,6 +49,7 @@ struct NodeInfo {
     NodeKind kind;
     std::string nodeName;
     std::string modelName;
+    std::string lib;
     std::optional<model_version_t> modelVersion;
     std::unordered_map<std::string, std::string> outputNameAliases;
 
@@ -55,10 +57,12 @@ struct NodeInfo {
         const std::string& nodeName,
         const std::string& modelName = "",
         std::optional<model_version_t> modelVersion = std::nullopt,
-        std::unordered_map<std::string, std::string> outputNameAliases = {}) :
+        std::unordered_map<std::string, std::string> outputNameAliases = {},
+        const std::string& lib = "") :
         kind(kind),
         nodeName(nodeName),
         modelName(modelName),
+        lib(lib),
         modelVersion(modelVersion),
         outputNameAliases(outputNameAliases) {}
 };

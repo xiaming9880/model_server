@@ -1,0 +1,13 @@
+FROM centos:7 as base_build
+
+RUN yum install -d6 -y epel-release centos-release-scl && yum update -d6 -y && yum install -d6 -y \
+            devtoolset-8-gcc* \
+            yum clean all
+
+#SHELL [ "/usr/bin/scl", "enable", "devtoolset-8"]
+#ENV CC=/opt/rh/devtoolset-8/root/bin/gcc
+#ENV CXX=/opt/rh/devtoolset-8/root/bin/g++
+
+WORKDIR /build
+
+ENTRYPOINT [ "/opt/rh/devtoolset-8/root/bin/g++" ]

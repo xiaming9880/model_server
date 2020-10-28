@@ -20,6 +20,9 @@ cc_library(
     srcs = [
         "config.cpp",
         "config.hpp",
+        "custom_nodes/custom_node_api.hpp",
+        "custom_node.cpp",
+        "custom_node.hpp",
         "deserialization.hpp",
         "dl_node.cpp",
         "dl_node.hpp",
