@@ -84,10 +84,10 @@ protected:
     virtual std::shared_ptr<ovms::ModelInstance> modelInstanceFactory();
 
     /**
-         * @brief Holds the custom loader interface pointer
+         * @brief Holds the custom loader interface Name
          *
          */
-    std::shared_ptr<CustomLoaderInterface> customLoaderInterfacePtr;
+    std::string customLoaderName;
 
 public:
     /**
@@ -179,14 +179,14 @@ public:
     Status reloadVersions(std::shared_ptr<model_versions_t> versions, ovms::ModelConfig& config);
 
     /**
-         * @brief Set the custom loader interface pointer
+         * @brief Set the custom loader name
          *
-         * @param custom loader interface pointer
+         * @param custom loader name
          *
          * @return status
          */
-    void setCustomLoaderInterfacePtr(std::shared_ptr<CustomLoaderInterface> ptr) {
-        customLoaderInterfacePtr = ptr;
+    void setCustomLoaderName(std::string name) {
+        customLoaderName = name;
     }
 };
 }  // namespace ovms
