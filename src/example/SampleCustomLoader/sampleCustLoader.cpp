@@ -213,12 +213,12 @@ int custSampleLoader::loadModel(const char* modelName, const char* basePath, con
         return CUSTLOADER_ERROR;
     }
 
-    /* Start the watcher thread after first moel load */
-    if (watcherStarted == false) {
-        int interval = 30;
-        startWatcher(interval);
-        this_thread::sleep_for(chrono::seconds(1));
-    }
+    // /* Start the watcher thread after first moel load */
+    // if (watcherStarted == false) {
+    //     int interval = 30;
+    //     startWatcher(interval);
+    //     this_thread::sleep_for(chrono::seconds(1));
+    // }
 
     models_loaded.push_back(make_pair(string(modelName), version));
     return CUSTLOADER_OK;

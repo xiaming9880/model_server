@@ -599,7 +599,9 @@ void ModelInstance::unloadModel() {
         auto customLoaderInterfacePtr = customloaders.find(customLoaderName);
 	SPDLOG_INFO("Ravikb::(5) customerLoaderIfPtr refcount = {}",customLoaderInterfacePtr.use_count());
         // once model is unloaded, notify custom loader object about the unload
-        customLoaderInterfacePtr->unloadModel(getName().c_str(), getVersion());
+        if (customLoaderInterfacePtr) {
+            customLoaderInterfacePtr->unloadModel(getName().c_str(), getVersion());
+        }
     }
 }
 
