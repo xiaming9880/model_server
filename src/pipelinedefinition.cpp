@@ -223,91 +223,264 @@ void PipelineDefinition::makeSubscriptions(ModelManager& manager) {
     }
 }
 
-Status PipelineDefinition::validateNode(ModelManager& manager, NodeInfo& node) {
-    std::unique_ptr<ModelInstanceUnloadGuard> nodeModelInstanceUnloadGuard;
-    std::shared_ptr<ModelInstance> nodeModelInstance;
-    tensor_map_t nodeInputs;
-    SPDLOG_DEBUG("Validation of pipeline: {} node: {} type: {}", getName(), node.nodeName, node.kind);
+Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& dependantNodeInfo) {
+    std::unique_ptr<ModelInstanceUnloadGuard> dependantModelUnloadGuard;
+    std::shared_ptr<ModelInstance> dependantModelInstance;
+    std::set<std::string> remainingUnconnectedDependantModelInputs;
+    SPDLOG_DEBUG("Validation of pipeline: {}; node name: {}; node kind: {}",
+        getName(),
+        dependantNodeInfo.nodeName,
+        dependantNodeInfo.kind);
 
-    Status result;
-    if (node.kind == NodeKind::DL) {
-        result = getModelInstance(manager, node.modelName, node.modelVersion.value_or(0), nodeModelInstance,
-            nodeModelInstanceUnloadGuard);
-        if (!result.ok()) {
-            SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing model: {} version: {}", this->pipelineName, node.modelName, node.modelVersion.value_or(0));
-            return StatusCode::MODEL_NAME_MISSING;
+    if (dependantNodeInfo.kind == NodeKind::DL) {
+        // Validate if all inputs are connected to some data source
+        //   - if such data source exists:
+        //      a) if DL model => such model exists, such model output exists
+        // Validate if underlying model does not support Dynamic Model Parameters
+        // Validate if underlying model exists and is available
+        // Validate if underlying model contains inputs (outputs?) as specified configuration
+
+        if (!getModelInstance(
+            manager,
+            dependantNodeInfo.modelName,
+            dependantNodeInfo.modelVersion.value_or(0),
+            dependantModelInstance,
+            dependantModelUnloadGuard).ok()) {
+            SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing model: {}; version: {}",
+                this->pipelineName,
+                dependantNodeInfo.modelName,
+                dependantNodeInfo.modelVersion.value_or(0));
+            return StatusCode::MODEL_NAME_MISSING; // REACHED
         }
 
-        auto& config = nodeModelInstance->getModelConfig();
+        const auto& config = dependantModelInstance->getModelConfig();
         if (config.getBatchingMode() == Mode::AUTO) {
-            SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node name {} used model name {} with dynamic batch size which is forbidden.", this->pipelineName, node.nodeName, node.modelName);
-            return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER;
+            SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node name {} used model name {} with dynamic batch size which is forbidden.",
+                this->pipelineName,
+                dependantNodeInfo.nodeName,
+                dependantNodeInfo.modelName);
+            return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER; // REACHED
         }
 
-        auto& shapes = config.getShapes();
-        for (auto& shape : shapes) {
-            if (shape.second.shapeMode == Mode::AUTO) {
-                SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node name {} used model name {} with dynamic shape which is forbidden.", this->pipelineName, node.nodeName, node.modelName);
-                return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER;
+        for (const auto& [name, info] : config.getShapes()) {
+            if (info.shapeMode == Mode::AUTO) {
+                SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node name {} used model name {} with dynamic shape which is forbidden.",
+                    this->pipelineName,
+                    dependantNodeInfo.nodeName,
+                    dependantNodeInfo.modelName);
+                return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER; // REACHED
             }
         }
 
-        nodeInputs = nodeModelInstance->getInputsInfo();
+        std::transform(
+            dependantModelInstance->getInputsInfo().begin(),
+            dependantModelInstance->getInputsInfo().end(),
+            std::inserter(
+                remainingUnconnectedDependantModelInputs,
+                remainingUnconnectedDependantModelInputs.end()),
+                [](auto pair){ return pair.first; });
     }
 
-    for (auto& connection : connections[node.nodeName]) {
-        std::unique_ptr<ModelInstanceUnloadGuard> sourceNodeModelInstanceUnloadGuard;
-        const std::string& sourceNodeName = connection.first;
-        auto findByName = [sourceNodeName](const NodeInfo& nodeInfo) {
-            return nodeInfo.nodeName == sourceNodeName;
-        };
-        std::vector<NodeInfo>::iterator sourceNodeInfo = std::find_if(std::begin(nodeInfos), std::end(nodeInfos), findByName);
-        if (sourceNodeInfo == std::end(nodeInfos)) {
-            SPDLOG_ERROR("Validation of pipeline({}) definition failed. For node: {} missing dependency node: {} ", this->pipelineName, node.nodeName, sourceNodeName);
-            return StatusCode::MODEL_NAME_MISSING;
+    for (const auto& [dependencyNodeName, mapping] : connections[dependantNodeInfo.nodeName]) {
+        // This check needs to be performed here instead of at the beginning of method.
+        // This is because we allow adding connection elements with no input pairs specified.
+        if (dependantNodeInfo.kind == NodeKind::ENTRY) {
+            if (mapping.size() > 0) {
+                return StatusCode::UNKNOWN_ERROR;
+            } else {
+                continue;
+            }
         }
 
-        if (sourceNodeInfo->kind == NodeKind::DL) {
-            std::shared_ptr<ModelInstance> sourceNodeModelInstance;
-            result = getModelInstance(manager, sourceNodeInfo->modelName, 0, sourceNodeModelInstance,
-                sourceNodeModelInstanceUnloadGuard);
-            if (!result.ok()) {
-                SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing model: {} version: {}", this->pipelineName, sourceNodeInfo->modelName, sourceNodeInfo->modelVersion.value_or(0));
+        auto dependencyNodeInfo = std::find_if(
+            std::begin(this->nodeInfos),
+            std::end(this->nodeInfos),
+            [dependencyNodeName](const NodeInfo& nodeInfo) { return nodeInfo.nodeName == dependencyNodeName; });
+        if (dependencyNodeInfo == std::end(this->nodeInfos)) {
+            SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node (name:{}) is connected to missing dependency node (name:{})",
+                this->pipelineName,
+                dependantNodeInfo.nodeName,
+                dependencyNodeName);
+            return StatusCode::MODEL_NAME_MISSING; // REACHED
+        }
+
+        if (dependencyNodeInfo->kind == NodeKind::EXIT) {
+            return StatusCode::UNKNOWN_ERROR; // REACHED
+        }
+
+        // At this point dependency node can only be either DL model node or entry node.
+        // Take care when adding new node types.
+        std::unique_ptr<ModelInstanceUnloadGuard> dependencyModelUnloadGuard;
+        std::shared_ptr<ModelInstance> dependencyModelInstance;
+        if (dependencyNodeInfo->kind == NodeKind::DL) {
+            if (!getModelInstance(
+                manager,
+                dependencyNodeInfo->modelName,
+                dependencyNodeInfo->modelVersion.value_or(0),
+                dependencyModelInstance,
+                dependencyModelUnloadGuard).ok()) {
+                SPDLOG_ERROR("Validation of pipeline({}) definition failed. Dependency DL model node refers to unavailable model - name:{}; version:{}",
+                    this->pipelineName,
+                    dependencyNodeInfo->modelName,
+                    dependencyNodeInfo->modelVersion.value_or(0));
                 return StatusCode::MODEL_MISSING;
             }
-            const tensor_map_t& sourceNodeOutputs = sourceNodeModelInstance->getOutputsInfo();
+        }
 
-            if (connection.second.size() == 0) {
-                SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing dependency mapping for node: {}", this->pipelineName, node.nodeName);
-                return StatusCode::PIPELINE_DEFINITION_MISSING_DEPENDENCY_MAPPING;
+        for (const auto& [alias, realName] : mapping) {
+            if (dependantNodeInfo.kind == NodeKind::DL) {
+                if (remainingUnconnectedDependantModelInputs.erase(realName) == 0) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node:{} model:{} version:{} has no input with name:{}",
+                        this->pipelineName,
+                        dependantNodeInfo.nodeName,
+                        dependantNodeInfo.modelName,
+                        dependantNodeInfo.modelVersion.value_or(0),
+                        realName);
+                    return StatusCode::INVALID_MISSING_INPUT; // REACHED
+                }
             }
 
-            for (auto alias : connection.second) {
-                std::string& dependencyOutputAliasName = alias.first;
-                std::string dependencyOutputName;
-                if (sourceNodeInfo->outputNameAliases.count(dependencyOutputAliasName)) {
-                    dependencyOutputName = sourceNodeInfo->outputNameAliases[dependencyOutputAliasName];
-                } else {
-                    dependencyOutputName = dependencyOutputAliasName;
+            if (dependencyNodeInfo->kind == NodeKind::DL) {
+                if (dependencyNodeInfo->outputNameAliases.count(alias) == 0) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing dependency node:{} data item:{} for dependant node:{}",
+                        this->pipelineName,
+                        dependencyNodeInfo->nodeName,
+                        alias,
+                        dependantNodeInfo.nodeName);
+                    return StatusCode::INVALID_MISSING_OUTPUT; // REACHED
                 }
-                auto dependencyOutput = sourceNodeOutputs.find(dependencyOutputName);
-                if (dependencyOutput == sourceNodeOutputs.end()) {
-                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing output: {} of model: {}", this->pipelineName, dependencyOutputName, sourceNodeModelInstance->getName());
-                    return StatusCode::INVALID_MISSING_OUTPUT;
+                const auto& modelOutputName = dependencyNodeInfo->outputNameAliases.at(alias);
+                if (dependencyModelInstance->getOutputsInfo().count(modelOutputName) == 0) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing model (name:{}, version:{}) output:{} of dependency node:{}",
+                        this->pipelineName,
+                        dependencyNodeInfo->modelName,
+                        dependencyNodeInfo->modelVersion.value_or(0),
+                        modelOutputName,
+                        dependencyNodeInfo->nodeName);
+                    return StatusCode::INVALID_MISSING_OUTPUT; // REACHED
                 }
+            }
 
-                if (node.kind != NodeKind::DL) {
-                    break;
+            if (dependantNodeInfo.kind == NodeKind::DL &&
+                dependencyNodeInfo->kind == NodeKind::ENTRY) {
+                const auto& pipelineInputName = alias;
+                if (dependencyNodeInfo->outputNameAliases.count(pipelineInputName) == 0) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing pipeline input:{} for dependant node:{}",
+                        this->pipelineName,
+                        pipelineInputName,
+                        dependantNodeInfo.nodeName);
+                    return StatusCode::INVALID_MISSING_OUTPUT; // REACHED
                 }
-                std::string& inputName = alias.second;
-                auto nodeInput = nodeInputs.find(inputName);
-                if (nodeInput == nodeInputs.end()) {
-                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing input: {} of node: {}", this->pipelineName, inputName, node.nodeName);
-                    return StatusCode::INVALID_MISSING_INPUT;
+            }
+
+            if (dependantNodeInfo.kind == NodeKind::DL &&
+                dependencyNodeInfo->kind == NodeKind::DL) {
+                const auto& modelOutputName = dependencyNodeInfo->outputNameAliases.at(alias);
+                const auto& modelInputName = realName;
+                const auto& tensorInput = dependantModelInstance->getInputsInfo().at(modelInputName);
+                const auto& tensorOutput = dependencyModelInstance->getOutputsInfo().at(modelOutputName);
+                if (tensorInput->getShape() != tensorOutput->getShape()) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Shape mismatch between: dependant node:{}; model:{}; version:{}; input:{}; shape:{} vs dependency node:{}; model:{}; version:{}; output:{}; shape:{}",
+                        this->pipelineName,
+                        dependantNodeInfo.nodeName,
+                        dependantNodeInfo.modelName,
+                        dependantNodeInfo.modelVersion.value_or(0),
+                        modelInputName,
+                        TensorInfo::shapeToString(tensorInput->getShape()),
+                        dependencyNodeInfo->nodeName,
+                        dependencyNodeInfo->modelName,
+                        dependencyNodeInfo->modelVersion.value_or(0),
+                        modelOutputName,
+                        TensorInfo::shapeToString(tensorOutput->getShape()));
+                    return StatusCode::INVALID_SHAPE; // REACHED
+                }
+                if (tensorInput->getPrecision() != tensorOutput->getPrecision()) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Precision mismatch between: dependant node:{}; model:{}; version:{}; input:{}; precision:{} vs dependency node:{}; model:{}; version:{}; output:{}; precision:{}",
+                        this->pipelineName,
+                        dependantNodeInfo.nodeName,
+                        dependantNodeInfo.modelName,
+                        dependantNodeInfo.modelVersion.value_or(0),
+                        modelInputName,
+                        tensorInput->getPrecisionAsString(),
+                        dependencyNodeInfo->nodeName,
+                        dependencyNodeInfo->modelName,
+                        dependencyNodeInfo->modelVersion.value_or(0),
+                        modelOutputName,
+                        tensorOutput->getPrecisionAsString());
+                    return StatusCode::INVALID_PRECISION; // CANNOT REACH MANUALLY, WE HAVE NO OTHER PRECISION SUPPORT
                 }
             }
         }
     }
+
+    if (remainingUnconnectedDependantModelInputs.size() > 0) {
+        std::stringstream ss;
+        for (const auto& input : remainingUnconnectedDependantModelInputs) {
+            ss << input << ", ";
+        }
+        SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node:{} model:{} version:{} has inputs:({}) not connected to any source",
+            this->pipelineName,
+            dependantNodeInfo.nodeName,
+            dependantNodeInfo.modelName,
+            dependantNodeInfo.modelVersion.value_or(0),
+            ss.str());
+        return StatusCode::INVALID_MISSING_INPUT; // REACHED
+    }
+
+    // for (auto& connection : connections[dependantNodeInfo.nodeName]) {
+    //     std::unique_ptr<ModelInstanceUnloadGuard> sourceNodeModelInstanceUnloadGuard;
+    //     const std::string& sourceNodeName = connection.first;
+    //     auto findByName = [sourceNodeName](const NodeInfo& nodeInfo) {
+    //         return nodeInfo.nodeName == sourceNodeName;
+    //     };
+    //     std::vector<NodeInfo>::iterator sourceNodeInfo = std::find_if(std::begin(nodeInfos), std::end(nodeInfos), findByName);
+    //     if (sourceNodeInfo == std::end(nodeInfos)) {
+    //         SPDLOG_ERROR("Validation of pipeline({}) definition failed. For node: {} missing dependency node: {} ", this->pipelineName, dependantNodeInfo.nodeName, sourceNodeName);
+    //         return StatusCode::MODEL_NAME_MISSING;
+    //     }
+
+    //     if (sourceNodeInfo->kind == NodeKind::DL) {
+    //         std::shared_ptr<ModelInstance> sourceNodeModelInstance;
+    //         auto result = getModelInstance(manager, sourceNodeInfo->modelName, sourceNodeInfo->modelVersion.value_or(0), sourceNodeModelInstance,
+    //             sourceNodeModelInstanceUnloadGuard);
+    //         if (!result.ok()) {
+    //             SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing model: {} version: {}", this->pipelineName, sourceNodeInfo->modelName, sourceNodeInfo->modelVersion.value_or(0));
+    //             return StatusCode::MODEL_MISSING;
+    //         }
+    //         const tensor_map_t& sourceNodeOutputs = sourceNodeModelInstance->getOutputsInfo();
+
+    //         if (connection.second.size() == 0) {
+    //             SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing dependency mapping for node: {}", this->pipelineName, dependantNodeInfo.nodeName);
+    //             return StatusCode::PIPELINE_DEFINITION_MISSING_DEPENDENCY_MAPPING;
+    //         }
+
+    //         for (auto alias : connection.second) {
+    //             std::string& dependencyOutputAliasName = alias.first;
+    //             std::string dependencyOutputName;
+    //             if (sourceNodeInfo->outputNameAliases.count(dependencyOutputAliasName)) {
+    //                 dependencyOutputName = sourceNodeInfo->outputNameAliases[dependencyOutputAliasName];
+    //             } else {
+    //                 dependencyOutputName = dependencyOutputAliasName;
+    //             }
+    //             auto dependencyOutput = sourceNodeOutputs.find(dependencyOutputName);
+    //             if (dependencyOutput == sourceNodeOutputs.end()) {
+    //                 SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing output: {} of model: {}", this->pipelineName, dependencyOutputName, sourceNodeModelInstance->getName());
+    //                 return StatusCode::INVALID_MISSING_OUTPUT;
+    //             }
+
+    //             if (dependantNodeInfo.kind != NodeKind::DL) {
+    //                 break;
+    //             }
+    //             std::string& inputName = alias.second;
+    //             const auto& nodeInputs = dependantModelInstance->getInputsInfo();
+    //             auto nodeInput = nodeInputs.find(inputName);
+    //             if (nodeInput == nodeInputs.end()) {
+    //                 SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing input: {} of node: {}", this->pipelineName, inputName, dependantNodeInfo.nodeName);
+    //                 return StatusCode::INVALID_MISSING_INPUT;
+    //             }
+    //         }
+    //     }
+    //}
     return StatusCode::OK;
 }
 
@@ -380,40 +553,53 @@ Status PipelineDefinition::validateForCycles() {
 
 Status PipelineDefinition::validateNodes(ModelManager& manager) {
     SPDLOG_DEBUG("Validation of pipeline definition:{} nodes started.", getName());
-    bool entryFound = false;
-    bool exitFound = false;
-    for (auto& node : nodeInfos) {
+
+    int entryNodeCount = std::count_if(
+        this->nodeInfos.begin(),
+        this->nodeInfos.end(),
+        [](const NodeInfo& info){ return info.kind == NodeKind::ENTRY; });
+    
+    int exitNodeCount = std::count_if(
+        this->nodeInfos.begin(),
+        this->nodeInfos.end(),
+        [](const NodeInfo& info){ return info.kind == NodeKind::EXIT; });
+
+    if (entryNodeCount <= 0) {
+        SPDLOG_ERROR("PipelineDefinition: {} is missing request node", pipelineName);
+        return StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT;
+    }
+
+    if (exitNodeCount <= 0) {
+        SPDLOG_ERROR("PipelineDefinition: {} is missing response node", pipelineName);
+        return StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT;
+    }
+
+    if (entryNodeCount > 1) {
+        SPDLOG_ERROR("PipelineDefinition: {} has multiple request nodes", pipelineName);
+        return StatusCode::PIPELINE_MULTIPLE_ENTRY_NODES;
+    }
+
+    if (exitNodeCount > 1) {
+        SPDLOG_ERROR("PipelineDefinition: {} has multiple response nodes", pipelineName);
+        return StatusCode::PIPELINE_MULTIPLE_EXIT_NODES;
+    }
+
+    for (const auto& node : nodeInfos) {
         auto findByName = [node](const NodeInfo& nodeInfo) {
             return nodeInfo.nodeName == node.nodeName;
         };
+
         if (std::count_if(nodeInfos.begin(), nodeInfos.end(), findByName) > 1) {
+            SPDLOG_ERROR("PipelineDefinition: {} has multiple nodes with name {}", pipelineName, node.nodeName);
             return StatusCode::PIPELINE_NODE_NAME_DUPLICATE;
         }
+
         auto result = validateNode(manager, node);
         if (!result.ok()) {
             return result;
         }
-        if (node.kind == NodeKind::ENTRY) {
-            if (entryFound) {
-                return StatusCode::PIPELINE_MULTIPLE_ENTRY_NODES;
-            }
-            entryFound = true;
-        }
-        if (node.kind == NodeKind::EXIT) {
-            if (exitFound) {
-                return StatusCode::PIPELINE_MULTIPLE_EXIT_NODES;
-            }
-            exitFound = true;
-        }
     }
-    if (!entryFound) {
-        SPDLOG_ERROR("PipelineDefinition: {} is missing request node", pipelineName);
-        return StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT;
-    }
-    if (!exitFound) {
-        SPDLOG_ERROR("PipelineDefinition: {} is missing response node", pipelineName);
-        return StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT;
-    }
+
     return StatusCode::OK;
 }
 

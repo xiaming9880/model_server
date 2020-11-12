@@ -78,7 +78,7 @@ class PipelineDefinition {
     std::atomic<uint64_t> requestsHandlesCounter = 0;
     std::shared_mutex loadMtx;
 
-    Status validateNode(ModelManager& manager, NodeInfo& node);
+    Status validateNode(ModelManager& manager, const NodeInfo& node);
 
 public:
     PipelineDefinition(const std::string& pipelineName,

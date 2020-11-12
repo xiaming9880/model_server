@@ -150,6 +150,14 @@ void processNodeInputs(const std::string nodeName, const rapidjson::Value::Const
     }
 }
 
+void processPipelineInputs(const rapidjson::Value::ConstMemberIterator& pipelineInputsPtr, const std::string& nodeName, std::unordered_map<std::string, std::string>& nodeOutputNameAlias) {
+    for (const auto& pipelineInput : pipelineInputsPtr->value.GetArray()) {
+        SPDLOG_INFO("Alliasing node:{} output:{}, under alias:{}",
+            nodeName, pipelineInput.GetString(), pipelineInput.GetString());
+        nodeOutputNameAlias[pipelineInput.GetString()] = pipelineInput.GetString();
+    }
+}
+
 void processNodeOutputs(const rapidjson::Value::ConstMemberIterator& nodeOutputsItr, const std::string& nodeName, const std::string& modelName, std::unordered_map<std::string, std::string>& nodeOutputNameAlias) {
     for (const auto& nodeOutput : nodeOutputsItr->value.GetArray()) {
         const std::string modelOutputName = nodeOutput.GetObject()["data_item"].GetString();
@@ -167,6 +175,7 @@ void processPipelineConfig(rapidjson::Document& configJson, const rapidjson::Val
 
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, "request"}};
+    processPipelineInputs(pipelineConfig.FindMember("inputs"), "request", info[0].outputNameAliases);
     pipeline_connections_t connections;
     for (const auto& nodeConfig : itr2->value.GetArray()) {
         std::string nodeName;
