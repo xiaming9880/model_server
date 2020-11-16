@@ -822,7 +822,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeInputMissingValidation) 
     //                                           /\--------|
     connections["dummy_node"] = {
         {"request", {{customPipelineInputName, DUMMY_MODEL_OUTPUT_NAME}}},
-        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, "MISSING"}}}};
+        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, "MISSING"}}}};  // loop?
 
     // dummy node (DUMMY_MODEL_OUTPUT_NAME) O--------->O response (customPipelineOutputName)
     connections["response"] = {
