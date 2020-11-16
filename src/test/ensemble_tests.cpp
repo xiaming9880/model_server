@@ -636,8 +636,8 @@ TEST_F(EnsembleFlowTest, CorrectPipelineDefinitionNodesValidation) {
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -665,8 +665,8 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithModelBatchingModeAutoValidat
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -694,8 +694,8 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithModelShapeModeAutoValidation
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -722,21 +722,26 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithMissingNodeModelValidation) 
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node1", "dummy"},
-        {NodeKind::DL, "dummy_node2", "missing"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node1", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "dummy_node2", "missing", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
 
-    // request (customPipelineInputName) O--------->O dummy node (DUMMY_MODEL_INPUT_NAME)
-    connections["dummy_node"] = {
+    // request (customPipelineInputName) O--------->O dummy node 1 (DUMMY_MODEL_INPUT_NAME)
+    connections["dummy_node1"] = {
+        {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
+
+    // request (customPipelineInputName) O--------->O dummy node 2 (DUMMY_MODEL_INPUT_NAME)
+    connections["dummy_node2"] = {
         {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
 
     // dummy node (DUMMY_MODEL_OUTPUT_NAME) O--------->O response (customPipelineOutputName)
     connections["response"] = {
-        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
+        {"dummy_node1", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName + "_1"}}},
+        {"dummy_node2", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName + "_2"}}}};
 
     // Create pipeline definition
     std::unique_ptr<PipelineDefinition> pipelineDefinition = std::make_unique<PipelineDefinition>("my_new_pipeline", info, connections);
@@ -751,8 +756,8 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithMissingConnectionNodeValidat
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -783,8 +788,8 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeOutputMissingValidation)
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -811,8 +816,8 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeInputMissingValidation) 
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -833,7 +838,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeInputMissingValidation) 
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::INVALID_MISSING_INPUT);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGrapgWithNoCycleValidation) {
+TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1104,8 +1109,8 @@ TEST_F(EnsembleFlowTest, SimplePipelineFactoryCreation) {
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -1154,12 +1159,17 @@ TEST_F(EnsembleFlowTest, ParallelPipelineFactoryUsage) {
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
         {NodeKind::EXIT, "response"},
     };
 
     for (int i = 0; i < PARALLEL_DUMMY_NODES; i++) {
-        info.emplace_back(NodeKind::DL, "dummy_node_" + std::to_string(i), "dummy");
+        info.emplace_back(std::move(NodeInfo(
+            NodeKind::DL,
+            "dummy_node_" + std::to_string(i),
+            "dummy",
+            std::nullopt,
+            {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}})));
     }
 
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
