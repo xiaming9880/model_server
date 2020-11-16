@@ -1781,9 +1781,7 @@ const char* pipelineOneDummyConfigWithMissingPipelineInputs = R"(
     ]
 })";
 
-// There is no need at the moment to have inputs declared in pipeline inputs since those are taken anyway from input/output
-// mapping which is defined in following nodes (nodes that use anything directly from PredictRequest)
-TEST_F(EnsembleFlowTest, DISABLED_PipelineFactoryCreationWithMissingPipelineInputs) {
+TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingPipelineInputs) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigWithMissingPipelineInputs);
 }
 
@@ -1851,15 +1849,15 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewModelNameShouldPass) {
 
     const std::string pipelineName = "originalName";
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
     connections["dummy_node"] = {
-        {"request", {{"pipeline_input_name", "b"}}}};
+        {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
     connections["response"] = {
-        {"dummy_node", {{"a", "pipeline_output_name"}}}};
+        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
     PipelineDefinition pd(pipelineName, info, connections);
     auto status = pd.validate(managerWithDummyModel);
     ASSERT_TRUE(status.ok());
@@ -1868,8 +1866,8 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewModelNameShouldPass) {
     status = managerWithDummyModel.reloadModelWithVersions(config);
     ASSERT_TRUE(status.ok()) << status.string();
     std::vector<NodeInfo> infoNew{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "newDummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "newDummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     status = pd.reload(managerWithDummyModel, std::move(infoNew), std::move(connections));
@@ -1882,23 +1880,23 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewNonExistingModelNameShou
 
     const std::string pipelineName = "originalName";
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
     connections["dummy_node"] = {
-        {"request", {{"pipeline_input_name", "b"}}}};
+        {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
     connections["response"] = {
-        {"dummy_node", {{"a", "pipeline_output_name"}}}};
+        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
     PipelineDefinition pd(pipelineName, info, connections);
     auto status = pd.validate(managerWithDummyModel);
     ASSERT_TRUE(status.ok());
 
     ASSERT_TRUE(status.ok()) << status.string();
     std::vector<NodeInfo> infoNew{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "newDummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "newDummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     status = pd.reload(managerWithDummyModel, std::move(infoNew), std::move(connections));
@@ -1911,15 +1909,15 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithAllModelVersionsRetiredShou
 
     const std::string pipelineName = "originalName";
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
     connections["dummy_node"] = {
-        {"request", {{"pipeline_input_name", "b"}}}};
+        {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
     connections["response"] = {
-        {"dummy_node", {{"a", "pipeline_output_name"}}}};
+        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
     PipelineDefinition pd(pipelineName, info, connections);
     auto status = pd.validate(managerWithDummyModel);
     ASSERT_TRUE(status.ok()) << status.string();
@@ -1935,15 +1933,15 @@ TEST_F(EnsembleFlowTest, RevalidatePipelineDefinitionWhen1ModelVersionBecomesAva
 
     const std::string pipelineName = "originalName";
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
     connections["dummy_node"] = {
-        {"request", {{"pipeline_input_name", "b"}}}};
+        {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
     connections["response"] = {
-        {"dummy_node", {{"a", "pipeline_output_name"}}}};
+        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
     PipelineDefinition pd(pipelineName, info, connections);
     auto status = pd.validate(managerWithDummyModel);
     ASSERT_TRUE(status.ok()) << status.string();
@@ -1964,8 +1962,8 @@ TEST_F(EnsembleFlowTest, DISABLED_RetirePipelineDefinitionExecuteShouldFail) {
 
     const std::string pipelineName = "originalName";
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
@@ -1988,8 +1986,8 @@ TEST_F(EnsembleFlowTest, ExecuteOnPipelineCreatedBeforeRetireShouldPass) {
 
     const std::string pipelineName = "originalName";
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
