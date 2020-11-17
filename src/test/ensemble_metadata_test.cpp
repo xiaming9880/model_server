@@ -32,8 +32,8 @@ TEST(EnsembleMetadata, OneNode) {
     ASSERT_EQ(manager.reloadModelWithVersions(config), StatusCode::OK);
 
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{"request_input_name", "request_input_name"}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -83,19 +83,26 @@ TEST(EnsembleMetadata, MultipleNodesOnDifferentLevelsUsingTheSamePipelineInputs)
     ModelConfig sum_model_config = SUM_MODEL_CONFIG;
     ASSERT_EQ(manager.reloadModelWithVersions(sum_model_config), StatusCode::OK);
 
-    std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "N1", "increment"},
-        {NodeKind::DL, "N2", "sum"},
-        {NodeKind::EXIT, "response"},
-    };
-
-    pipeline_connections_t connections;
-
     const std::string& INCREMENT_MODEL_INPUT_NAME = DUMMY_MODEL_INPUT_NAME;
     const std::string& INCREMENT_MODEL_OUTPUT_NAME = DUMMY_MODEL_OUTPUT_NAME;
     const int INCREMENT_MODEL_INPUT_SIZE = DUMMY_MODEL_INPUT_SIZE;
     const int INCREMENT_MODEL_OUTPUT_SIZE = DUMMY_MODEL_OUTPUT_SIZE;
+
+    std::vector<NodeInfo> info{
+        {NodeKind::ENTRY, "request", "", std::nullopt, {
+            {"request_input_for_N1", "request_input_for_N1"},
+            {"request_input_for_N2_and_exit", "request_input_for_N2_and_exit"},
+        }},
+        {NodeKind::DL, "N1", "increment", std::nullopt, {
+            {INCREMENT_MODEL_OUTPUT_NAME, INCREMENT_MODEL_OUTPUT_NAME}
+        }},
+        {NodeKind::DL, "N2", "sum", std::nullopt, {
+            {SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}
+        }},
+        {NodeKind::EXIT, "response"},
+    };
+
+    pipeline_connections_t connections;
 
     connections["N1"] = {
         {"request", {{"request_input_for_N1", INCREMENT_MODEL_INPUT_NAME}}}};
@@ -157,7 +164,7 @@ TEST(EnsembleMetadata, EmptyPipelineReturnsCorrectInputAndOutputInfo) {
 
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, "request"},
-        {NodeKind::EXIT, "response"},
+        {NodeKind::EXIT, "response"}, // Should fail?
     };
 
     pipeline_connections_t connections;
