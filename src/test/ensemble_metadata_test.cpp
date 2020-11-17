@@ -90,15 +90,11 @@ TEST(EnsembleMetadata, MultipleNodesOnDifferentLevelsUsingTheSamePipelineInputs)
 
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, "request", "", std::nullopt, {
-            {"request_input_for_N1", "request_input_for_N1"},
-            {"request_input_for_N2_and_exit", "request_input_for_N2_and_exit"},
-        }},
-        {NodeKind::DL, "N1", "increment", std::nullopt, {
-            {INCREMENT_MODEL_OUTPUT_NAME, INCREMENT_MODEL_OUTPUT_NAME}
-        }},
-        {NodeKind::DL, "N2", "sum", std::nullopt, {
-            {SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}
-        }},
+                                                           {"request_input_for_N1", "request_input_for_N1"},
+                                                           {"request_input_for_N2_and_exit", "request_input_for_N2_and_exit"},
+                                                       }},
+        {NodeKind::DL, "N1", "increment", std::nullopt, {{INCREMENT_MODEL_OUTPUT_NAME, INCREMENT_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "N2", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -163,8 +159,8 @@ TEST(EnsembleMetadata, EmptyPipelineReturnsCorrectInputAndOutputInfo) {
     ConstructorEnabledModelManager manager;
 
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::EXIT, "response"}, // Should fail?
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{"name_from_entry", "name_from_entry"}}},
+        {NodeKind::EXIT, "response"},
     };
 
     pipeline_connections_t connections;
@@ -207,14 +203,23 @@ TEST(EnsembleMetadata, ParallelDLModelNodesReferingToManyPipelineInputs) {
     ASSERT_EQ(manager.reloadModelWithVersions(sum_model_config), StatusCode::OK);
 
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "sum_node_quarter_1", "sum"},
-        {NodeKind::DL, "sum_node_quarter_2", "sum"},
-        {NodeKind::DL, "sum_node_quarter_3", "sum"},
-        {NodeKind::DL, "sum_node_quarter_4", "sum"},
-        {NodeKind::DL, "sum_node_semi_1", "sum"},
-        {NodeKind::DL, "sum_node_semi_2", "sum"},
-        {NodeKind::DL, "sum_node_final_1", "sum"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {
+                                                           {"request_input_for_quarter_1_a", "request_input_for_quarter_1_a"},
+                                                           {"request_input_for_quarter_1_b", "request_input_for_quarter_1_b"},
+                                                           {"request_input_for_quarter_2_a", "request_input_for_quarter_2_a"},
+                                                           {"request_input_for_quarter_2_b", "request_input_for_quarter_2_b"},
+                                                           {"request_input_for_quarter_3_a", "request_input_for_quarter_3_a"},
+                                                           {"request_input_for_quarter_3_b", "request_input_for_quarter_3_b"},
+                                                           {"request_input_for_quarter_4_a", "request_input_for_quarter_4_a"},
+                                                           {"request_input_for_quarter_4_b", "request_input_for_quarter_4_b"},
+                                                       }},
+        {NodeKind::DL, "sum_node_quarter_1", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "sum_node_quarter_2", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "sum_node_quarter_3", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "sum_node_quarter_4", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "sum_node_semi_1", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "sum_node_semi_2", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "sum_node_final_1", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -299,8 +304,8 @@ TEST(EnsembleMetadata, OneUnavailableNode) {
     ASSERT_EQ(manager.reloadModelWithVersions(config), StatusCode::OK);
 
     std::vector<NodeInfo> info{
-        {NodeKind::ENTRY, "request"},
-        {NodeKind::DL, "dummy_node", "dummy"},
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{"request_input_name", "request_input_name"}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 

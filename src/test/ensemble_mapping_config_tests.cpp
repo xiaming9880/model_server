@@ -249,6 +249,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAnd
     EXPECT_EQ(response_tensor_name->getPrecision(), InferenceEngine::Precision::FP32);
 }
 
+// Disabled until CVS-41658 is resolved.
 TEST_F(PipelineWithInputOutputNameMappedModel, DISABLED_SuccessfullyReloadPipelineAfterAddingModelMapping) {
     // Load models
     auto modelConfig = DUMMY_MODEL_CONFIG;
@@ -323,8 +324,8 @@ TEST_F(PipelineWithInputOutputNameMappedModel, DISABLED_SuccessfullyReloadPipeli
     ASSERT_EQ(asVector<float>(output_proto.tensor_content()), output_data);
 }
 
+// Disabled until CVS-41658 is resolved.
 TEST_F(PipelineWithInputOutputNameMappedModel, DISABLED_ReloadPipelineAfterRemovalOfModelMappingWillFail) {
-    // disabled - check CVS-41658
     // Create mapping config for model
     createConfigFileWithContent(R"({
         "inputs": {"b": "input_tensor"},

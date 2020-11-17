@@ -245,7 +245,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                 this->pipelineName,
                 dependantNodeInfo.modelName,
                 dependantNodeInfo.modelVersion.value_or(0));
-            return StatusCode::MODEL_NAME_MISSING;  // REACHED
+            return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL;  // REACHED
         }
 
         // Ban creating pipelines with Dynamic Model Parameters.
@@ -302,7 +302,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                 this->pipelineName,
                 dependantNodeInfo.nodeName,
                 dependencyNodeName);
-            return StatusCode::MODEL_NAME_MISSING;  // REACHED
+            return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_NODE;  // REACHED
         }
 
         // Exit cannot be dependency of any node.
@@ -327,7 +327,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                     this->pipelineName,
                     dependencyNodeInfo->modelName,
                     dependencyNodeInfo->modelVersion.value_or(0));
-                return StatusCode::MODEL_MISSING;
+                return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL;
             }
         }
 
@@ -345,21 +345,22 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependantNodeInfo.modelName,
                         dependantNodeInfo.modelVersion.value_or(0),
                         realName);
-                    return StatusCode::INVALID_MISSING_INPUT;  // REACHED
+                    return StatusCode::PIPELINE_CONNECTION_TO_MISSING_NODE_INPUT;  // REACHED
                 }
+            }
+
+            // Check whether node is configured to have such output.
+            if (dependencyNodeInfo->outputNameAliases.count(alias) == 0) {
+                SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing dependency node:{} data item:{} for dependant node:{}",
+                    this->pipelineName,
+                    dependencyNodeInfo->nodeName,
+                    alias,
+                    dependantNodeInfo.nodeName);
+                return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE;  // REACHED
             }
 
             // If dependency node is of type DL model, make sure there is underlying model output present.
             if (dependencyNodeInfo->kind == NodeKind::DL) {
-                // Check whether node is configured to have such output.
-                if (dependencyNodeInfo->outputNameAliases.count(alias) == 0) {
-                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing dependency node:{} data item:{} for dependant node:{}",
-                        this->pipelineName,
-                        dependencyNodeInfo->nodeName,
-                        alias,
-                        dependantNodeInfo.nodeName);
-                    return StatusCode::INVALID_MISSING_OUTPUT;  // REACHED
-                }
                 // Check whether underlying model contains required output.
                 const auto& modelOutputName = dependencyNodeInfo->outputNameAliases.at(alias);
                 if (dependencyModelInstance->getOutputsInfo().count(modelOutputName) == 0) {
@@ -369,7 +370,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependencyNodeInfo->modelVersion.value_or(0),
                         modelOutputName,
                         dependencyNodeInfo->nodeName);
-                    return StatusCode::INVALID_MISSING_OUTPUT;  // REACHED
+                    return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT;  // REACHED
                 }
             }
 
@@ -383,7 +384,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         this->pipelineName,
                         pipelineInputName,
                         dependantNodeInfo.nodeName);
-                    return StatusCode::INVALID_MISSING_OUTPUT;  // REACHED
+                    return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE;  // REACHED
                 }
             }
 
@@ -441,7 +442,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
             dependantNodeInfo.modelName,
             dependantNodeInfo.modelVersion.value_or(0),
             ss.str());
-        return StatusCode::INVALID_MISSING_INPUT;  // REACHED
+        return StatusCode::PIPELINE_NOT_ALL_INPUTS_CONNECTED;  // REACHED
     }
 
     return StatusCode::OK;
