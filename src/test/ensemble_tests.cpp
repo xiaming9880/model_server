@@ -868,8 +868,8 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodeNotAllInputsConnectedValidation) 
 
 TEST_F(EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsValidation) {
     ConstructorEnabledModelManager manager;
-    ModelConfig dummy_1x10 = DUMMY_MODEL_CONFIG;
-    ModelConfig dummy_1x20 = DUMMY_MODEL_CONFIG;
+    ModelConfig dummy_1x10 = config;
+    ModelConfig dummy_1x20 = config;
     dummy_1x10.setName("dummy_1x10");
     dummy_1x20.setName("dummy_1x20");
     dummy_1x10.setBatchSize(0);
@@ -905,43 +905,42 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsVa
     ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::INVALID_SHAPE);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
+// Disabled until CVS-36446 is done.
+TEST_F(EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
     ConstructorEnabledModelManager manager;
-    ModelConfig dummy_1x10 = DUMMY_MODEL_CONFIG;
-    ModelConfig dummy_1x20 = DUMMY_MODEL_CONFIG;
-    dummy_1x10.setName("dummy_1x10");
-    dummy_1x20.setName("dummy_1x20");
-    dummy_1x10.setBatchSize(0);
-    dummy_1x20.setBatchSize(0);
-    ASSERT_EQ(dummy_1x10.parseShapeParameter("(1,10)"), StatusCode::OK);
-    ASSERT_EQ(dummy_1x20.parseShapeParameter("(1,20)"), StatusCode::OK);
-    ASSERT_EQ(manager.reloadModelWithVersions(dummy_1x10), StatusCode::OK);
-    ASSERT_EQ(manager.reloadModelWithVersions(dummy_1x20), StatusCode::OK);
+    ModelConfig dummy_fp32 = config;
+    ModelConfig dummy_u8 = config;
+    dummy_fp32.setName("dummy_fp32");
+    dummy_u8.setName("dummy_u8");
+    // Set precision of dummy_FP32 to FP32
+    // Set precision of dummy_U8 to U8
+    ASSERT_EQ(manager.reloadModelWithVersions(dummy_fp32), StatusCode::OK);
+    ASSERT_EQ(manager.reloadModelWithVersions(dummy_u8), StatusCode::OK);
 
     PipelineFactory factory;
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
-        {NodeKind::DL, "dummy_node_1x10", "dummy_1x10", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
-        {NodeKind::DL, "dummy_node_1x20", "dummy_1x20", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "dummy_node_fp32", "dummy_fp32", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "dummy_node_u8", "dummy_u8", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, "response"},
     };
 
     std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
 
-    connections["dummy_node_1x10"] = {
+    connections["dummy_node_fp32"] = {
         {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
 
-    connections["dummy_node_1x20"] = {
-        {"dummy_node_1x10", {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_INPUT_NAME}}}};
+    connections["dummy_node_u8"] = {
+        {"dummy_node_fp32", {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_INPUT_NAME}}}};
 
     connections["response"] = {
-        {"dummy_node_1x20", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
+        {"dummy_node_u8", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
 
     // Create pipeline definition
     std::unique_ptr<PipelineDefinition> pipelineDefinition = std::make_unique<PipelineDefinition>("my_new_pipeline", info, connections);
-    ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::INVALID_SHAPE);
+    ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::INVALID_PRECISION);
 }
 
 TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {

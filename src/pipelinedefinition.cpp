@@ -283,7 +283,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
     for (const auto& [dependencyNodeName, mapping] : connections[dependantNodeInfo.nodeName]) {
         // This check needs to be performed here instead of at the beginning of method.
         // This is because we allow adding connection elements with no input pairs specified.
-        // TODO: Try to ban size 0 of mapping? PIPELINE_DEFINITION_MISSING_DEPENDENCY_MAPPING
+        // For now just skip empty connections.
         if (dependantNodeInfo.kind == NodeKind::ENTRY) {
             if (mapping.size() > 0) {
                 return StatusCode::UNKNOWN_ERROR;
@@ -302,12 +302,12 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                 this->pipelineName,
                 dependantNodeInfo.nodeName,
                 dependencyNodeName);
-            return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_NODE;  // REACHED
+            return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_NODE;
         }
 
         // Exit cannot be dependency of any node.
         if (dependencyNodeInfo->kind == NodeKind::EXIT) {
-            return StatusCode::UNKNOWN_ERROR;  // REACHED
+            return StatusCode::UNKNOWN_ERROR;
         }
 
         // At this point dependency node can only be either DL model node or entry node.
@@ -345,7 +345,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependantNodeInfo.modelName,
                         dependantNodeInfo.modelVersion.value_or(0),
                         realName);
-                    return StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT;  // REACHED
+                    return StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT;
                 }
             }
 
@@ -356,7 +356,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                     dependencyNodeInfo->nodeName,
                     alias,
                     dependantNodeInfo.nodeName);
-                return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE;  // REACHED
+                return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE;
             }
 
             // If dependency node is of type DL model, make sure there is underlying model output present.
@@ -370,7 +370,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependencyNodeInfo->modelVersion.value_or(0),
                         modelOutputName,
                         dependencyNodeInfo->nodeName);
-                    return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT;  // REACHED
+                    return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT;
                 }
             }
 
@@ -395,7 +395,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependencyNodeInfo->modelVersion.value_or(0),
                         modelOutputName,
                         TensorInfo::shapeToString(tensorOutput->getShape()));
-                    return StatusCode::INVALID_SHAPE;  // REACHED
+                    return StatusCode::INVALID_SHAPE;
                 }
                 if (tensorInput->getPrecision() != tensorOutput->getPrecision()) {
                     SPDLOG_ERROR("Validation of pipeline({}) definition failed. Precision mismatch between: dependant node:{}; model:{}; version:{}; input:{}; precision:{} vs dependency node:{}; model:{}; version:{}; output:{}; precision:{}",
@@ -428,7 +428,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
             dependantNodeInfo.modelName,
             dependantNodeInfo.modelVersion.value_or(0),
             ss.str());
-        return StatusCode::PIPELINE_NOT_ALL_INPUTS_CONNECTED;  // REACHED
+        return StatusCode::PIPELINE_NOT_ALL_INPUTS_CONNECTED;
     }
 
     return StatusCode::OK;
