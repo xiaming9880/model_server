@@ -159,7 +159,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalInputNameFailsC
     connections["response"] = {
         {"dummyB", {{"output_tensor", "response_tensor_name"}}}};
 
-    EXPECT_EQ(factory.createDefinition("pipeline", info, connections, managerWithDummyModel), StatusCode::INVALID_MISSING_INPUT);
+    EXPECT_EQ(factory.createDefinition("pipeline", info, connections, managerWithDummyModel), StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT);
 }
 
 TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalOutputNameFailsCreation) {
@@ -180,8 +180,8 @@ TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalOutputNameFails
 
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, "request", "", std::nullopt, {{"vector", "vector"}}},
-        {NodeKind::DL, "dummyA", "dummy", std::nullopt, {{"output_tensor", "output_tensor"}}},
-        {NodeKind::DL, "dummyB", "dummy", std::nullopt, {{"output_tensor", "output_tensor"}}},
+        {NodeKind::DL, "dummyA", "dummy", std::nullopt, {{"output_tensor", "a"}}},
+        {NodeKind::DL, "dummyB", "dummy", std::nullopt, {{"output_tensor", "a"}}},
         {NodeKind::EXIT, "response"},
     };
 
@@ -190,11 +190,11 @@ TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalOutputNameFails
     connections["dummyA"] = {
         {"request", {{"vector", "input_tensor"}}}};
     connections["dummyB"] = {
-        {"dummyA", {{"a", "input_tensor"}}}};
+        {"dummyA", {{"output_tensor", "input_tensor"}}}};
     connections["response"] = {
-        {"dummyB", {{"a", "response_tensor_name"}}}};
+        {"dummyB", {{"output_tensor", "response_tensor_name"}}}};
 
-    EXPECT_EQ(factory.createDefinition("pipeline", info, connections, managerWithDummyModel), StatusCode::INVALID_MISSING_OUTPUT);
+    EXPECT_EQ(factory.createDefinition("pipeline", info, connections, managerWithDummyModel), StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT);
 }
 
 TEST_F(PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAndGetMetadata) {

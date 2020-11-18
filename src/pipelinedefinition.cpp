@@ -245,7 +245,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                 this->pipelineName,
                 dependantNodeInfo.modelName,
                 dependantNodeInfo.modelVersion.value_or(0));
-            return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL;  // REACHED
+            return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL;
         }
 
         // Ban creating pipelines with Dynamic Model Parameters.
@@ -255,7 +255,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                 this->pipelineName,
                 dependantNodeInfo.nodeName,
                 dependantNodeInfo.modelName);
-            return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER;  // REACHED
+            return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER;
         }
 
         for (const auto& [name, info] : config.getShapes()) {
@@ -264,7 +264,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                     this->pipelineName,
                     dependantNodeInfo.nodeName,
                     dependantNodeInfo.modelName);
-                return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER;  // REACHED
+                return StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER;
             }
         }
 
@@ -345,7 +345,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependantNodeInfo.modelName,
                         dependantNodeInfo.modelVersion.value_or(0),
                         realName);
-                    return StatusCode::PIPELINE_CONNECTION_TO_MISSING_NODE_INPUT;  // REACHED
+                    return StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT;  // REACHED
                 }
             }
 
@@ -371,20 +371,6 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         modelOutputName,
                         dependencyNodeInfo->nodeName);
                     return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT;  // REACHED
-                }
-            }
-
-            // If we connection we validate is refering to data source from gRPC/REST request,
-            // make sure we defined such input names in pipeline input field.
-            if (dependantNodeInfo.kind == NodeKind::DL &&
-                dependencyNodeInfo->kind == NodeKind::ENTRY) {
-                const auto& pipelineInputName = alias;
-                if (dependencyNodeInfo->outputNameAliases.count(pipelineInputName) == 0) {
-                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Missing pipeline input:{} for dependant node:{}",
-                        this->pipelineName,
-                        pipelineInputName,
-                        dependantNodeInfo.nodeName);
-                    return StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE;  // REACHED
                 }
             }
 

@@ -808,7 +808,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeOutputMissingValidation)
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeInputMissingValidation) {
+TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeModelInputMissingValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -835,7 +835,35 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeInputMissingValidation) 
 
     // Create pipeline definition
     std::unique_ptr<PipelineDefinition> pipelineDefinition = std::make_unique<PipelineDefinition>("my_new_pipeline", info, connections);
-    ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_CONNECTION_TO_MISSING_NODE_INPUT);
+    ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT);
+}
+
+TEST_F(EnsembleFlowTest, PipelineDefinitionNodeNotAllInputsConnectedValidation) {
+    ConstructorEnabledModelManager manager;
+    ModelConfig sumModelConfig = SUM_MODEL_CONFIG;
+    manager.reloadModelWithVersions(sumModelConfig);
+
+    PipelineFactory factory;
+
+    // Simulate reading from pipeline_config.json
+    std::vector<NodeInfo> info{
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "sum_node", "sum", std::nullopt, {{SUM_MODEL_OUTPUT_NAME, SUM_MODEL_OUTPUT_NAME}}},
+        {NodeKind::EXIT, "response"},
+    };
+
+    std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
+
+    // Missing connection for SUM_MODEL_INPUT_NAME_2
+    connections["sum_node"] = {
+        {"request", {{customPipelineInputName, SUM_MODEL_INPUT_NAME_1}}}};
+
+    connections["response"] = {
+        {"sum_node", {{SUM_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
+
+    // Create pipeline definition
+    std::unique_ptr<PipelineDefinition> pipelineDefinition = std::make_unique<PipelineDefinition>("my_new_pipeline", info, connections);
+    ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::PIPELINE_NOT_ALL_INPUTS_CONNECTED);
 }
 
 TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {
@@ -1900,7 +1928,7 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewNonExistingModelNameShou
         {NodeKind::EXIT, "response"},
     };
     status = pd.reload(managerWithDummyModel, std::move(infoNew), std::move(connections));
-    EXPECT_EQ(status, ovms::StatusCode::MODEL_NAME_MISSING) << status.string();
+    EXPECT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL) << status.string();
 }
 
 TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithAllModelVersionsRetiredShouldFail) {
@@ -1924,7 +1952,7 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithAllModelVersionsRetiredShou
     managerWithDummyModel.findModelByName("dummy")->retireAllVersions();
 
     status = pd.reload(managerWithDummyModel, std::move(info), std::move(connections));
-    EXPECT_EQ(status, ovms::StatusCode::MODEL_NAME_MISSING) << status.string();
+    EXPECT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL) << status.string();
 }
 
 TEST_F(EnsembleFlowTest, RevalidatePipelineDefinitionWhen1ModelVersionBecomesAvailableShouldPass) {
@@ -1948,7 +1976,7 @@ TEST_F(EnsembleFlowTest, RevalidatePipelineDefinitionWhen1ModelVersionBecomesAva
     managerWithDummyModel.findModelByName("dummy")->retireAllVersions();
 
     status = pd.validate(managerWithDummyModel);
-    ASSERT_EQ(status, ovms::StatusCode::MODEL_NAME_MISSING) << status.string();
+    ASSERT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL) << status.string();
 
     status = managerWithDummyModel.reloadModelWithVersions(config);
     ASSERT_TRUE(status.ok()) << status.string();
