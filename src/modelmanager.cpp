@@ -150,11 +150,16 @@ void processNodeInputs(const std::string nodeName, const rapidjson::Value::Const
     }
 }
 
-void processPipelineInputs(const rapidjson::Value::ConstMemberIterator& pipelineInputsPtr, const std::string& nodeName, std::unordered_map<std::string, std::string>& nodeOutputNameAlias) {
+void processPipelineInputs(const rapidjson::Value::ConstMemberIterator& pipelineInputsPtr, const std::string& nodeName, std::unordered_map<std::string, std::string>& nodeOutputNameAlias, const std::string& pipelineName) {
     for (const auto& pipelineInput : pipelineInputsPtr->value.GetArray()) {
+        const std::string pipelineInputName = pipelineInput.GetString();
         SPDLOG_INFO("Alliasing node:{} output:{}, under alias:{}",
-            nodeName, pipelineInput.GetString(), pipelineInput.GetString());
-        nodeOutputNameAlias[pipelineInput.GetString()] = pipelineInput.GetString();
+            nodeName, pipelineInputName, pipelineInputName);
+        if (nodeOutputNameAlias.count(pipelineInputName) > 0) {
+            SPDLOG_WARN("Pipeline {} has duplicated input declaration", pipelineName);
+        } else {
+            nodeOutputNameAlias[pipelineInputName] = pipelineInputName;
+        }
     }
 }
 
@@ -175,7 +180,7 @@ void processPipelineConfig(rapidjson::Document& configJson, const rapidjson::Val
 
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, "request"}};
-    processPipelineInputs(pipelineConfig.FindMember("inputs"), "request", info[0].outputNameAliases);
+    processPipelineInputs(pipelineConfig.FindMember("inputs"), "request", info[0].outputNameAliases, pipelineName);
     pipeline_connections_t connections;
     for (const auto& nodeConfig : itr2->value.GetArray()) {
         std::string nodeName;

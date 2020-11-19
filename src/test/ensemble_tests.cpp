@@ -943,6 +943,35 @@ TEST_F(EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLM
     ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::INVALID_PRECISION);
 }
 
+TEST_F(EnsembleFlowTest, PipelineDefinitionMultipleConnectionsToModelInputValidation) {
+    ConstructorEnabledModelManager managerWithDummyModel;
+    managerWithDummyModel.reloadModelWithVersions(config);
+
+    PipelineFactory factory;
+
+    // Simulate reading from pipeline_config.json
+    std::vector<NodeInfo> info{
+        {NodeKind::ENTRY, "request", "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
+        {NodeKind::DL, "dummy_node", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
+        {NodeKind::EXIT, "response"},
+    };
+
+    std::unordered_map<std::string, std::unordered_map<std::string, InputPairs>> connections;
+
+    // request (customPipelineInputName) O--------->O dummy node (DUMMY_MODEL_INPUT_NAME)
+    connections["dummy_node"] = {
+        {"request", {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME},
+                        {customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
+
+    // dummy node (DUMMY_MODEL_OUTPUT_NAME) O--------->O response (customPipelineOutputName)
+    connections["response"] = {
+        {"dummy_node", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
+
+    // Create pipeline definition
+    std::unique_ptr<PipelineDefinition> pipelineDefinition = std::make_unique<PipelineDefinition>("my_new_pipeline", info, connections);
+    ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_MODEL_INPUT_CONNECTED_TO_MULTIPLE_DATA_SOURCES);
+}
+
 TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);

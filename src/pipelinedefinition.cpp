@@ -338,7 +338,7 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
             // If such input cannot be found in the map, it means we refer
             // to non existing model input or we already connected it to some other data source which is invalid.
             if (dependantNodeInfo.kind == NodeKind::DL) {
-                if (remainingUnconnectedDependantModelInputs.erase(realName) == 0) {
+                if (dependantModelInstance->getInputsInfo().count(realName) == 0) {
                     SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node:{} model:{} version:{} has no input with name:{}",
                         this->pipelineName,
                         dependantNodeInfo.nodeName,
@@ -346,6 +346,15 @@ Status PipelineDefinition::validateNode(ModelManager& manager, const NodeInfo& d
                         dependantNodeInfo.modelVersion.value_or(0),
                         realName);
                     return StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT;
+                }
+                if (remainingUnconnectedDependantModelInputs.erase(realName) == 0) {
+                    SPDLOG_ERROR("Validation of pipeline({}) definition failed. Node:{} model:{} version:{} input name:{} is connected to more than one data source",
+                        this->pipelineName,
+                        dependantNodeInfo.nodeName,
+                        dependantNodeInfo.modelName,
+                        dependantNodeInfo.modelVersion.value_or(0),
+                        realName);
+                    return StatusCode::PIPELINE_MODEL_INPUT_CONNECTED_TO_MULTIPLE_DATA_SOURCES;
                 }
             }
 
