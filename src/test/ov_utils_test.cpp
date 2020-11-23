@@ -23,7 +23,7 @@
 
 using testing::ElementsAre;
 
-TEST(OVUtils, CopyBlob) {
+TEST(DISABLED_OVUtils, CopyBlob) {
     const std::vector<size_t> shape{2, 3, 4, 5};
     const InferenceEngine::Precision precision{InferenceEngine::Precision::FP32};
     const InferenceEngine::Layout layout{InferenceEngine::Layout::NCHW};

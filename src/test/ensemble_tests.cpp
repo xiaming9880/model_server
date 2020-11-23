@@ -41,7 +41,7 @@ using testing::Return;
 
 const uint NIREQ = 2;
 
-class EnsembleFlowTest : public TestWithTempDir {
+class DISABLED_EnsembleFlowTest : public TestWithTempDir {
 protected:
     void SetUp() override {
         TestWithTempDir::SetUp();
@@ -117,7 +117,7 @@ protected:
     const std::vector<float> bs1requestData{-5.0, 3.0, 0.0, -12.0, 9.0, -100.0, 102.0, 92.0, -1.0, 12.0};
 };
 
-TEST_F(EnsembleFlowTest, DummyModel) {
+TEST_F(DISABLED_EnsembleFlowTest, DummyModel) {
     // Most basic configuration, just process single dummy model request
     // input   dummy    output
     //  O------->O------->O
@@ -142,7 +142,7 @@ TEST_F(EnsembleFlowTest, DummyModel) {
     checkResponse(dummySeriallyConnectedCount);
 }
 
-TEST_F(EnsembleFlowTest, DummyModelDirectAndPipelineInference) {
+TEST_F(DISABLED_EnsembleFlowTest, DummyModelDirectAndPipelineInference) {
     ConstructorEnabledModelManager managerWithDummyModel;
     config.setNireq(1);
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -212,7 +212,7 @@ TEST_F(EnsembleFlowTest, DummyModelDirectAndPipelineInference) {
         << readableError(expected_output, actual_output, dataLengthToCheck);
 }
 
-TEST_F(EnsembleFlowTest, SeriesOfDummyModels) {
+TEST_F(DISABLED_EnsembleFlowTest, SeriesOfDummyModels) {
     // Most basic configuration, just process single dummy model request
 
     Timer timer;
@@ -261,7 +261,7 @@ TEST_F(EnsembleFlowTest, SeriesOfDummyModels) {
     std::cout << "compare results: " << timer.elapsed<std::chrono::microseconds>("compare results") / 1000 << "ms\n";
 }
 
-TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicBatchSize) {
+TEST_F(DISABLED_EnsembleFlowTest, ExecutePipelineWithDynamicBatchSize) {
     // Scenario
 
     // input(3x10)   dummy(1x10), change batch size    output(3x10)
@@ -306,7 +306,7 @@ TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicBatchSize) {
     checkResponse(seriallyConnectedDummyModels, batchSize);
 }
 
-TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicShape) {
+TEST_F(DISABLED_EnsembleFlowTest, ExecutePipelineWithDynamicShape) {
     // Scenario
 
     // input(1x5)      dummy(1x10), reshape            output(1x5)
@@ -362,7 +362,7 @@ TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicShape) {
     EXPECT_EQ(0, std::memcmp(actual_output, expected_output, 1 * 5 * sizeof(float)));
 }
 
-TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicBatchAndShape) {
+TEST_F(DISABLED_EnsembleFlowTest, ExecutePipelineWithDynamicBatchAndShape) {
     // Scenario
 
     // input(3x500)   dummy(1x10), reshape, change batch size    output(3x500)
@@ -430,7 +430,7 @@ TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicBatchAndShape) {
     EXPECT_EQ(0, std::memcmp(actual_output, expected_output, BATCH_SIZE * WIDTH * sizeof(float)));
 }
 
-TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicShape_RequestHasDifferentDim0) {
+TEST_F(DISABLED_EnsembleFlowTest, ExecutePipelineWithDynamicShape_RequestHasDifferentDim0) {
     // Scenario
     // Shape is set to auto but only first dimension differs - change batch size via reshape
 
@@ -488,7 +488,7 @@ TEST_F(EnsembleFlowTest, ExecutePipelineWithDynamicShape_RequestHasDifferentDim0
     checkResponse(seriallyConnectedDummyModels, BATCH_SIZE);
 }
 
-TEST_F(EnsembleFlowTest, ParallelDummyModels) {
+TEST_F(DISABLED_EnsembleFlowTest, ParallelDummyModels) {
     // Most basic configuration, just process single dummy model request
     const int N = 200;
     /* input      dummy x N      output
@@ -547,7 +547,7 @@ TEST_F(EnsembleFlowTest, ParallelDummyModels) {
     }
 }
 
-TEST_F(EnsembleFlowTest, FailInDLNodeSetInputsMissingInput) {
+TEST_F(DISABLED_EnsembleFlowTest, FailInDLNodeSetInputsMissingInput) {
     // Most basic configuration, just process single dummy model request
 
     // input   dummy(fail in setInputs)    output
@@ -571,7 +571,7 @@ TEST_F(EnsembleFlowTest, FailInDLNodeSetInputsMissingInput) {
     EXPECT_EQ(pipeline.execute(), ovms::StatusCode::INVALID_MISSING_INPUT);
 }
 
-TEST_F(EnsembleFlowTest, FailInDLNodeExecuteInputsMissingInput) {
+TEST_F(DISABLED_EnsembleFlowTest, FailInDLNodeExecuteInputsMissingInput) {
     // Most basic configuration, just process single dummy model request
 
     // input   dummy(fail in execute)    output
@@ -604,7 +604,7 @@ public:
     }
 };
 
-TEST_F(EnsembleFlowTest, FailInDLNodeFetchResults) {
+TEST_F(DISABLED_EnsembleFlowTest, FailInDLNodeFetchResults) {
     // Most basic configuration, just process single dummy model request
 
     // input   dummy(fail in fetch)    output
@@ -629,7 +629,7 @@ TEST_F(EnsembleFlowTest, FailInDLNodeFetchResults) {
     EXPECT_EQ(status, ovms::StatusCode::UNKNOWN_ERROR) << status.string();
 }
 
-TEST_F(EnsembleFlowTest, CorrectPipelineDefinitionNodesValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, CorrectPipelineDefinitionNodesValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -655,7 +655,7 @@ TEST_F(EnsembleFlowTest, CorrectPipelineDefinitionNodesValidation) {
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::OK);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithModelBatchingModeAutoValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodesWithModelBatchingModeAutoValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     config.setBatchingMode(AUTO);
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -682,7 +682,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithModelBatchingModeAutoValidat
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithModelShapeModeAutoValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodesWithModelShapeModeAutoValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     config.parseShapeParameter("auto");
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -709,7 +709,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithModelShapeModeAutoValidation
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::FORBIDDEN_MODEL_DYNAMIC_PARAMETER);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithMissingNodeModelValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodesWithMissingNodeModelValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -741,7 +741,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithMissingNodeModelValidation) 
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithMissingConnectionNodeValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodesWithMissingConnectionNodeValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -771,7 +771,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithMissingConnectionNodeValidat
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_NODE);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeOutputMissingValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodesWithNodeOutputMissingValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -797,7 +797,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeOutputMissingValidation)
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeModelInputMissingValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodesWithNodeModelInputMissingValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -825,7 +825,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodesWithNodeModelInputMissingValidat
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionNodeNotAllInputsConnectedValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionNodeNotAllInputsConnectedValidation) {
     ConstructorEnabledModelManager manager;
     ModelConfig sumModelConfig = SUM_MODEL_CONFIG;
     manager.reloadModelWithVersions(sumModelConfig);
@@ -853,7 +853,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionNodeNotAllInputsConnectedValidation) 
     ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::PIPELINE_NOT_ALL_INPUTS_CONNECTED);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsValidation) {
     ConstructorEnabledModelManager manager;
     ModelConfig dummy_1x10 = config;
     ModelConfig dummy_1x20 = config;
@@ -893,7 +893,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsVa
 }
 
 // Disabled until CVS-36446 is done.
-TEST_F(EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
     ConstructorEnabledModelManager manager;
     ModelConfig dummy_fp32 = config;
     ModelConfig dummy_u8 = config;
@@ -930,7 +930,7 @@ TEST_F(EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLM
     ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::INVALID_PRECISION);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionMultipleConnectionsToModelInputValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionMultipleConnectionsToModelInputValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -957,7 +957,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionMultipleConnectionsToModelInputValida
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_MODEL_INPUT_CONNECTED_TO_MULTIPLE_DATA_SOURCES);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionExitNodeIsDependencyErrorValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionExitNodeIsDependencyErrorValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -981,7 +981,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionExitNodeIsDependencyErrorValidation) 
     ASSERT_EQ(pipelineDefinition->validateNodes(managerWithDummyModel), StatusCode::PIPELINE_EXIT_USED_AS_NODE_DEPENDENCY);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1031,7 +1031,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGraphWithNoCycleValidation) {
     ASSERT_EQ(pipelineDefinition.validateForCycles(), StatusCode::OK);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGrapgWithCycleValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionComplexGrapgWithCycleValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1093,7 +1093,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionComplexGrapgWithCycleValidation) {
     ASSERT_EQ(pipelineDefinition.validateForCycles(), StatusCode::PIPELINE_CYCLE_FOUND);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionContainingCycleValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionContainingCycleValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1128,7 +1128,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionContainingCycleValidation) {
     ASSERT_EQ(pipelineDefinition.validateForCycles(), StatusCode::PIPELINE_CYCLE_FOUND);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionContainingNodeConnectedToItselfValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionContainingNodeConnectedToItselfValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1156,7 +1156,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionContainingNodeConnectedToItselfValida
     ASSERT_EQ(pipelineDefinition.validateForCycles(), StatusCode::PIPELINE_CYCLE_FOUND);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionContainingTwoCyclesValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionContainingTwoCyclesValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1198,7 +1198,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionContainingTwoCyclesValidation) {
     ASSERT_EQ(pipelineDefinition.validateForCycles(), StatusCode::PIPELINE_CYCLE_FOUND);
 }
 
-TEST_F(EnsembleFlowTest, PipelineDefinitionContainingUnconnectedNodeValidation) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineDefinitionContainingUnconnectedNodeValidation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1225,7 +1225,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionContainingUnconnectedNodeValidation) 
     ASSERT_EQ(pipelineDefinition.validateForCycles(), StatusCode::PIPELINE_CONTAINS_UNCONNECTED_NODES);
 }
 
-TEST_F(EnsembleFlowTest, SimplePipelineFactoryCreation) {
+TEST_F(DISABLED_EnsembleFlowTest, SimplePipelineFactoryCreation) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -1269,7 +1269,7 @@ TEST_F(EnsembleFlowTest, SimplePipelineFactoryCreation) {
     checkResponse(dummySeriallyConnectedCount);
 }
 
-TEST_F(EnsembleFlowTest, ParallelPipelineFactoryUsage) {
+TEST_F(DISABLED_EnsembleFlowTest, ParallelPipelineFactoryUsage) {
     // Prepare manager
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -1374,7 +1374,7 @@ TEST_F(EnsembleFlowTest, ParallelPipelineFactoryUsage) {
     }
 }
 
-TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_MultipleEntryNodes) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryWrongConfiguration_MultipleEntryNodes) {
     // Prepare manager
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -1390,7 +1390,7 @@ TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_MultipleEntryNodes) {
     ASSERT_EQ(factory.createDefinition("pipeline", info, {}, managerWithDummyModel), StatusCode::PIPELINE_MULTIPLE_ENTRY_NODES);
 }
 
-TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_MultipleExitNodes) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryWrongConfiguration_MultipleExitNodes) {
     // Prepare manager
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -1406,7 +1406,7 @@ TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_MultipleExitNodes) {
     ASSERT_EQ(factory.createDefinition("pipeline", info, {}, managerWithDummyModel), StatusCode::PIPELINE_MULTIPLE_EXIT_NODES);
 }
 
-TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_ExitMissing) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryWrongConfiguration_ExitMissing) {
     // Prepare manager
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -1420,7 +1420,7 @@ TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_ExitMissing) {
     EXPECT_EQ(factory.createDefinition("pipeline", info, {}, managerWithDummyModel), StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT);
 }
 
-TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_EntryMissing) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryWrongConfiguration_EntryMissing) {
     // Prepare manager
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -1434,7 +1434,7 @@ TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_EntryMissing) {
     EXPECT_EQ(factory.createDefinition("pipeline", info, {}, managerWithDummyModel), StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT);
 }
 
-TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_DefinitionMissing) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryWrongConfiguration_DefinitionMissing) {
     PipelineFactory factory;
 
     PredictRequest request;
@@ -1443,7 +1443,7 @@ TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_DefinitionMissing) {
     EXPECT_EQ(factory.create(pipeline, "pipeline", &request, &response, ovms::ModelManager::getInstance()), StatusCode::PIPELINE_DEFINITION_NAME_MISSING);
 }
 
-TEST_F(EnsembleFlowTest, PipelineFactoryWrongConfiguration_NodeNameDuplicate) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryWrongConfiguration_NodeNameDuplicate) {
     // Prepare manager
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
@@ -1503,7 +1503,7 @@ static const char* pipelineOneDummyConfig = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithInputOutputsMappings) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithInputOutputsMappings) {
     std::string fileToReload = directoryPath + "/ovms_config_file.json";
     createConfigFileWithContent(pipelineOneDummyConfig, fileToReload);
     ConstructorEnabledModelManager managerWithDummyModel;
@@ -1578,7 +1578,7 @@ static const char* pipelineOneDummyConfig2ParallelDummy = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithInputOutputsMappings2ParallelDummy) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithInputOutputsMappings2ParallelDummy) {
     std::string fileToReload = directoryPath + "/ovms_config_file.json";
     createConfigFileWithContent(pipelineOneDummyConfig2ParallelDummy, fileToReload);
     ConstructorEnabledModelManager managerWithDummyModel;
@@ -1666,7 +1666,7 @@ static const char* pipelineOneDummyConfigWrongNodeKind = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithWrongNodeKind) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithWrongNodeKind) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigWrongNodeKind);
 }
 
@@ -1709,7 +1709,7 @@ static const char* pipelineOneDummyConfigMissingNodeModelName = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeModelName) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeModelName) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigMissingNodeModelName);
 }
 
@@ -1752,7 +1752,7 @@ static const char* pipelineOneDummyConfigMissingNodeName = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeName) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeName) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigMissingNodeName);
 }
 
@@ -1792,7 +1792,7 @@ static const char* pipelineOneDummyConfigMissingNodeInputs = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeInputs) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeInputs) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigMissingNodeInputs);
 }
 
@@ -1832,7 +1832,7 @@ static const char* pipelineOneDummyConfigWithMissingNodeOutputs = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeOutputs) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithMissingNodeOutputs) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigWithMissingNodeOutputs);
 }
 
@@ -1871,7 +1871,7 @@ static const char* pipelineOneDummyConfigWithMissingPipelineOutputs = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingPipelineOutputs) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithMissingPipelineOutputs) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigWithMissingPipelineOutputs);
 }
 
@@ -1914,11 +1914,11 @@ static const char* pipelineOneDummyConfigWithMissingPipelineInputs = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, PipelineFactoryCreationWithMissingPipelineInputs) {
+TEST_F(DISABLED_EnsembleFlowTest, PipelineFactoryCreationWithMissingPipelineInputs) {
     performWrongPipelineConfigTest(pipelineOneDummyConfigWithMissingPipelineInputs);
 }
 
-TEST_F(EnsembleFlowTest, ErrorHandlingSkipsDeferredNodesExecutionIfExecutionFailed) {
+TEST_F(DISABLED_EnsembleFlowTest, ErrorHandlingSkipsDeferredNodesExecutionIfExecutionFailed) {
     // This test creates specific scenario where 3 parallel nodes are getting executed
     // with nireq=1. The second node gets stream id ticket for inference and is deferred
     // for execution later. Meanwhile error occurs in third parallel node (shape validation error).
@@ -1976,7 +1976,7 @@ TEST_F(EnsembleFlowTest, ErrorHandlingSkipsDeferredNodesExecutionIfExecutionFail
     EXPECT_EQ(pipeline.execute(), StatusCode::INVALID_SHAPE);
 }
 
-TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewModelNameShouldPass) {
+TEST_F(DISABLED_EnsembleFlowTest, ReloadPipelineDefinitionWithNewModelNameShouldPass) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2007,7 +2007,7 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewModelNameShouldPass) {
     EXPECT_TRUE(status.ok()) << status.string();
 }
 
-TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewNonExistingModelNameShouldFail) {
+TEST_F(DISABLED_EnsembleFlowTest, ReloadPipelineDefinitionWithNewNonExistingModelNameShouldFail) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2036,7 +2036,7 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithNewNonExistingModelNameShou
     EXPECT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL) << status.string();
 }
 
-TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithAllModelVersionsRetiredShouldFail) {
+TEST_F(DISABLED_EnsembleFlowTest, ReloadPipelineDefinitionWithAllModelVersionsRetiredShouldFail) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2060,7 +2060,7 @@ TEST_F(EnsembleFlowTest, ReloadPipelineDefinitionWithAllModelVersionsRetiredShou
     EXPECT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL) << status.string();
 }
 
-TEST_F(EnsembleFlowTest, RevalidatePipelineDefinitionWhen1ModelVersionBecomesAvailableShouldPass) {
+TEST_F(DISABLED_EnsembleFlowTest, RevalidatePipelineDefinitionWhen1ModelVersionBecomesAvailableShouldPass) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2089,7 +2089,7 @@ TEST_F(EnsembleFlowTest, RevalidatePipelineDefinitionWhen1ModelVersionBecomesAva
     EXPECT_TRUE(status.ok()) << status.string();
 }
 
-TEST_F(EnsembleFlowTest, DISABLED_RetirePipelineDefinitionExecuteShouldFail) {
+TEST_F(DISABLED_EnsembleFlowTest, DISABLED_RetirePipelineDefinitionExecuteShouldFail) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2113,7 +2113,7 @@ TEST_F(EnsembleFlowTest, DISABLED_RetirePipelineDefinitionExecuteShouldFail) {
     EXPECT_EQ(status, ovms::StatusCode::PIPELINE_DEFINITION_NOT_LOADED_ANYMORE);
 }
 
-TEST_F(EnsembleFlowTest, ExecuteOnPipelineCreatedBeforeRetireShouldPass) {
+TEST_F(DISABLED_EnsembleFlowTest, ExecuteOnPipelineCreatedBeforeRetireShouldPass) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2151,7 +2151,7 @@ public:
     }
 };
 
-TEST_F(EnsembleFlowTest, WaitForLoadingPipelineDefinitionFromBeginStatus) {
+TEST_F(DISABLED_EnsembleFlowTest, WaitForLoadingPipelineDefinitionFromBeginStatus) {
     ConstructorEnabledModelManager managerWithDummyModel;
     managerWithDummyModel.reloadModelWithVersions(config);
 
@@ -2212,7 +2212,7 @@ static const char* configJsonWithNoPipeline = R"(
     ]
 })";
 
-TEST_F(EnsembleFlowTest, RetireAllPipelinesAfterLoading) {
+TEST_F(DISABLED_EnsembleFlowTest, RetireAllPipelinesAfterLoading) {
     std::string fileToReload = directoryPath + "/ovms_config_file.json";
     createConfigFileWithContent(pipelineOneDummyConfig, fileToReload);
     ConstructorEnabledModelManager manager;
@@ -2269,7 +2269,7 @@ static const char* pipelineOneDummyConfigWithChangedInputName = R"(
 })";
 const std::string NEW_INPUT_NAME = "NEW_INPUT_NAME";
 
-TEST_F(EnsembleFlowTest, ReloadPipelineAfterLoadingSuccesfullyChangedInputName) {
+TEST_F(DISABLED_EnsembleFlowTest, ReloadPipelineAfterLoadingSuccesfullyChangedInputName) {
     std::string fileToReload = directoryPath + "/ovms_config_file.json";
     createConfigFileWithContent(pipelineOneDummyConfig, fileToReload);
     ConstructorEnabledModelManager manager;
@@ -2327,7 +2327,7 @@ static const char* pipelineOneDummyConfigWithMissingModel = R"(
         }
     ]
 })";
-TEST_F(EnsembleFlowTest, ReloadPipelineAfterLoadingFailDueToMissingModel) {
+TEST_F(DISABLED_EnsembleFlowTest, ReloadPipelineAfterLoadingFailDueToMissingModel) {
     std::string fileToReload = directoryPath + "/ovms_config_file.json";
     createConfigFileWithContent(pipelineOneDummyConfig, fileToReload);
     ConstructorEnabledModelManager manager;
@@ -2475,7 +2475,7 @@ const std::string PIPELINE_TO_RETIRE{"pipelineToRetire"};
 const std::string PIPELINE_TO_RELOAD{"pipelineToReload"};
 const std::string PIPELINE_TO_ADD{"pipelineToAdd"};
 
-TEST_F(EnsembleFlowTest, RetireReloadAddPipelineAtTheSameTime) {
+TEST_F(DISABLED_EnsembleFlowTest, RetireReloadAddPipelineAtTheSameTime) {
     // First add 2 pipelines with different names
     // Then change config in a way:
     //  * remove 1 pipeline

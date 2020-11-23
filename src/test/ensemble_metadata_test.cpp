@@ -21,7 +21,7 @@
 
 using namespace ovms;
 
-TEST(EnsembleMetadata, OneNode) {
+TEST(DISABLED_EnsembleMetadata, OneNode) {
     /*
         This test creates pipeline definition with one DL model node.
         Test ensures we receive correct metadata - one input and one output for the DL model node.
@@ -68,7 +68,7 @@ TEST(EnsembleMetadata, OneNode) {
     EXPECT_EQ(output->getPrecision(), InferenceEngine::Precision::FP32);
 }
 
-TEST(EnsembleMetadata, MultipleNodesOnDifferentLevelsUsingTheSamePipelineInputs) {
+TEST(DISABLED_EnsembleMetadata, MultipleNodesOnDifferentLevelsUsingTheSamePipelineInputs) {
     /*
         This test creates pipeline definition with multiple connections refering to entry node.
         This way we use the same input tensors in nodes on different levels of depth.
@@ -150,7 +150,7 @@ TEST(EnsembleMetadata, MultipleNodesOnDifferentLevelsUsingTheSamePipelineInputs)
     EXPECT_EQ(original_input_for_N2->getPrecision(), InferenceEngine::Precision::UNSPECIFIED);
 }
 
-TEST(EnsembleMetadata, EmptyPipelineReturnsCorrectInputAndOutputInfo) {
+TEST(DISABLED_EnsembleMetadata, EmptyPipelineReturnsCorrectInputAndOutputInfo) {
     /*
         This test creates pipeline definition with no DL model nodes.
         The only thing that pipeline does is passing request data into response with no inferences in between.
@@ -191,7 +191,7 @@ TEST(EnsembleMetadata, EmptyPipelineReturnsCorrectInputAndOutputInfo) {
     EXPECT_EQ(name_for_response->getPrecision(), InferenceEngine::Precision::UNSPECIFIED);
 }
 
-TEST(EnsembleMetadata, ParallelDLModelNodesReferingToManyPipelineInputs) {
+TEST(DISABLED_EnsembleMetadata, ParallelDLModelNodesReferingToManyPipelineInputs) {
     /*
         This test creates pipeline definition with 4 parallel DL model nodes, all refering to entry node.
         All nodes require 2 inputs, all from different sources, so in total we need 8 different pipeline inputs.
@@ -288,7 +288,7 @@ TEST(EnsembleMetadata, ParallelDLModelNodesReferingToManyPipelineInputs) {
     EXPECT_EQ(outputs.find("final_sum")->second->getPrecision(), InferenceEngine::Precision::FP32);
 }
 
-TEST(EnsembleMetadata, OneUnavailableNode) {
+TEST(DISABLED_EnsembleMetadata, OneUnavailableNode) {
     /*
         This test creates pipeline definition with one DL model node which has model that is unavailable due to:
             a) no model version available

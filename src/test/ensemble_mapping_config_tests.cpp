@@ -33,7 +33,7 @@ using ::testing::ElementsAre;
  * This set of tests ensures model input/output mapping is respected by pipeline execution.
  */
 
-class PipelineWithInputOutputNameMappedModel : public TestWithTempDir {
+class DISABLED_PipelineWithInputOutputNameMappedModel : public TestWithTempDir {
 protected:
     void SetUp() override {
         TestWithTempDir::SetUp();
@@ -52,7 +52,7 @@ protected:
     ConstructorEnabledModelManager managerWithDummyModel;
 };
 
-TEST_F(PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAndExecute) {
+TEST_F(DISABLED_PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAndExecute) {
     // Create mapping config for model
     createConfigFileWithContent(R"({
         "inputs": {"b": "input_tensor"},
@@ -115,7 +115,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAnd
     ASSERT_EQ(asVector<float>(output_proto.tensor_content()), output_data);
 }
 
-TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalInputNameFailsCreation) {
+TEST_F(DISABLED_PipelineWithInputOutputNameMappedModel, ReferingToOriginalInputNameFailsCreation) {
     // Create mapping config for model
     createConfigFileWithContent(R"({
         "inputs": {"b": "input_tensor"},
@@ -150,7 +150,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalInputNameFailsC
     EXPECT_EQ(factory.createDefinition("pipeline", info, connections, managerWithDummyModel), StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT);
 }
 
-TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalOutputNameFailsCreation) {
+TEST_F(DISABLED_PipelineWithInputOutputNameMappedModel, ReferingToOriginalOutputNameFailsCreation) {
     // Create mapping config for model
     createConfigFileWithContent(R"({
         "inputs": {"b": "input_tensor"},
@@ -185,7 +185,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, ReferingToOriginalOutputNameFails
     EXPECT_EQ(factory.createDefinition("pipeline", info, connections, managerWithDummyModel), StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT);
 }
 
-TEST_F(PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAndGetMetadata) {
+TEST_F(DISABLED_PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAndGetMetadata) {
     // Create mapping config for model
     createConfigFileWithContent(R"({
         "inputs": {"b": "input_tensor"},
@@ -238,7 +238,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, SuccessfullyReferToMappedNamesAnd
 }
 
 // Disabled until CVS-41658 is resolved.
-TEST_F(PipelineWithInputOutputNameMappedModel, DISABLED_SuccessfullyReloadPipelineAfterAddingModelMapping) {
+TEST_F(DISABLED_PipelineWithInputOutputNameMappedModel, DISABLED_SuccessfullyReloadPipelineAfterAddingModelMapping) {
     // Load models
     auto modelConfig = DUMMY_MODEL_CONFIG;
     modelConfig.setBasePath(modelPath);
@@ -313,7 +313,7 @@ TEST_F(PipelineWithInputOutputNameMappedModel, DISABLED_SuccessfullyReloadPipeli
 }
 
 // Disabled until CVS-41658 is resolved.
-TEST_F(PipelineWithInputOutputNameMappedModel, DISABLED_ReloadPipelineAfterRemovalOfModelMappingWillFail) {
+TEST_F(DISABLED_PipelineWithInputOutputNameMappedModel, DISABLED_ReloadPipelineAfterRemovalOfModelMappingWillFail) {
     // Create mapping config for model
     createConfigFileWithContent(R"({
         "inputs": {"b": "input_tensor"},
