@@ -91,6 +91,10 @@ for key, obj in ark_score:
 
 scoreObjects = { k:m for k,m in ark_score }
 
+# Temporary
+ivectors_reader = ArchiveReader("/home/mzeglars/models/aspire_tdnn_scores/mini_feat_1_10_ivector.ark")
+ivectors = { k:m for k,m in ivectors_reader }
+
 print('Start processing:')
 print('\tModel name: {}'.format(args.get('model_name')))
 
@@ -115,7 +119,15 @@ for key, obj in ark_reader:
     meanErrSum = 0.0
 
     samples_limit = int(args.get('samples'))
-    for x in range(0, batch_size):
+
+    cw_l = 17
+    cw_r = 12
+    score_index = (cw_l + cw_r) * -1
+
+    start = True
+    end = False
+
+    for x in range(0, (batch_size + cw_l + cw_r)):
 
         if x >= samples_limit:
             break
@@ -124,18 +136,26 @@ for key, obj in ark_reader:
         request = predict_pb2.PredictRequest()
         request.model_spec.name = args.get('model_name')
 
-        printDebug('\tTensor before input in shape: {}\n'.format(obj[x].shape))
-        inputArray = np.expand_dims(obj[x], axis=0)
-        printDebug('\tTensor input in shape: {}\n'.format(inputArray.shape))
+        if x < cw_l:
+            inputArray = np.expand_dims(obj[0], axis=0)
+            ivectorsArr = np.expand_dims(ivectors[key][0], axis=0)
+        elif x >= cw_l and x < batch_size + cw_l:
+            inputArray = np.expand_dims(obj[x-cw_l], axis=0)
+            ivectorsArr = np.expand_dims(ivectors[key][x-cw_l], axis=0)
+        else:
+            inputArray = np.expand_dims(obj[batch_size - 1], axis=0)
+            ivectorsArr = np.expand_dims(ivectors[key][batch_size - 1], axis=0)
 
         request.inputs[args['input_name']].CopyFrom(make_tensor_proto(inputArray, shape=inputArray.shape))
+        request.inputs["ivector"].CopyFrom(make_tensor_proto(ivectorsArr, shape=ivectorsArr.shape))
 
-        if x == 0:
+        if start:
             request.inputs['sequence_control_input'].CopyFrom(make_tensor_proto(SEQUENCE_START, dtype="uint32"))
+            start = False
         
         request.inputs['sequence_id'].CopyFrom(make_tensor_proto(sequence_id, dtype="uint64"))
 
-        if x == batch_size - 1 or x == samples_limit - 1:
+        if x == batch_size + cw_l + cw_r - 1:
             request.inputs['sequence_control_input'].CopyFrom(make_tensor_proto(SEQUENCE_END, dtype="uint32"))
 
         start_time = datetime.datetime.now()
@@ -164,14 +184,15 @@ for key, obj in ark_reader:
         #result = stub.Predict(request, 10.0) # result includes a dictionary with all model outputs
         
         #resultsArray = np.array(output)
-        referenceArray = scoreObjects[key][x]
-        
-        meanErr = CalculateUtteranceError(referenceArray, resultsArray[0])
+        if(score_index >= 0):
+            referenceArray = scoreObjects[key][score_index]
+            
+            meanErr = CalculateUtteranceError(referenceArray, resultsArray[0])
 
-        meanErrSum += meanErr
-        # Statistics
-        printDebug('Iteration {}; Mean error: {:.10f} Processing time: {:.2f} ms; speed {:.2f} fps\n'.format(x,meanErr,round(np.average(duration), 2), round(1000 * batch_size / np.average(duration), 2)))
-
+            meanErrSum += meanErr
+            # Statistics
+            printDebug('Iteration {}; Mean error: {:.10f} Processing time: {:.2f} ms; speed {:.2f} fps\n'.format(x,meanErr,round(np.average(duration), 2), round(1000 * batch_size / np.average(duration), 2)))
+        score_index += 1
         #END utterance loop
 
     meanErrAvg = meanErrSum/min(samples_limit,batch_size)
