@@ -25,7 +25,6 @@
 #include "../pipeline_factory.hpp"
 #include "../prediction_service_utils.hpp"
 #include "../status.hpp"
-#include "../timer.hpp"
 #include "test_utils.hpp"
 
 using namespace ovms;
@@ -316,10 +315,10 @@ static const char* stressTestPipelineOneDummyConfigSpecificVersionUsed = R"(
 })";
 
 class StressPipelineConfigChanges : public TestWithTempDir {
-    const uint loadThreadCount = 20;
+    const uint loadThreadCount = 10;
     const uint beforeConfigChangeLoadTimeMs = 30;
     const uint afterConfigChangeLoadTimeMs = 50;
-    const int stressIterationsLimit = 50000;
+    const int stressIterationsLimit = 5000;
 
     std::string configFilePath;
     std::string ovmsConfig;
@@ -388,7 +387,6 @@ public:
         std::set<StatusCode> requiredExecuteResults = {StatusCode::OK},
         std::set<StatusCode> allowedCreatePDResults = {StatusCode::OK},
         std::set<StatusCode> allowedExecuteResults = {StatusCode::OK}) {
-        std::vector<std::unique_ptr<std::thread>> t1;
 
         ConstructorEnabledModelManager manager;
         createConfigFileWithContent(ovmsConfig, configFilePath);
@@ -419,8 +417,9 @@ public:
             executePipelineRetCodesCounters[static_cast<StatusCode>(i)] = 0;
         }
         // create worker threads
+        std::vector<std::unique_ptr<std::thread>> workerThreads;
         for (uint i = 0; i < loadThreadCount; ++i) {
-            t1.emplace_back(std::make_unique<std::thread>(
+            workerThreads.emplace_back(std::make_unique<std::thread>(
                 [this,
                     &futureStartSignals,
                     &futureStopSignals,
@@ -459,12 +458,12 @@ public:
         // wait to work strictly on config operations after change
         std::this_thread::sleep_for(std::chrono::milliseconds(afterConfigChangeLoadTimeMs));
         std::for_each(stopSignals.begin(), stopSignals.end(), [](auto& stopSignal) { stopSignal.set_value(); });
-        std::for_each(t1.begin(), t1.end(), [](auto& t) { t->join(); });
+        std::for_each(workerThreads.begin(), workerThreads.end(), [](auto& t) { t->join(); });
 
         for (auto& [retCode, counter] : createPipelineRetCodesCounters) {
             SPDLOG_TRACE("Create:[{}]={} -- {}", static_cast<uint>(retCode), counter, ovms::Status(retCode).string());
             if (requiredCreatePDResults.find(retCode) != requiredCreatePDResults.end()) {
-                EXPECT_GT(counter, 0) << "One of required retcodes did not occur. This may indicate fail or fail in test setup";
+                EXPECT_GT(counter, 0) << static_cast<uint>(retCode) << ":" << ovms::Status(retCode).string() << " did not occur. This may indicate fail or fail in test setup";
                 continue;
             }
             if (counter == 0) {
@@ -477,7 +476,7 @@ public:
         for (auto& [retCode, counter] : executePipelineRetCodesCounters) {
             SPDLOG_TRACE("Execute:[{}]={} -- {}", static_cast<uint>(retCode), counter, ovms::Status(retCode).string());
             if (requiredExecuteResults.find(retCode) != requiredExecuteResults.end()) {
-                EXPECT_GT(counter, 0) << "One of required retcodes did not occur. This may indicate fail or fail in test setup";
+                EXPECT_GT(counter, 0) << static_cast<uint>(retCode) << ":\"" << ovms::Status(retCode).string() << "\" did not occur. This may indicate fail or fail in test setup";
                 continue;
             }
             if (counter == 0) {
@@ -545,16 +544,18 @@ public:
         }
         for (auto& [retCode, counter] : createPipelineRetCodesCounters) {
             if (counter > 0) {
-                SPDLOG_TRACE("Create:[{}]={}:{}", static_cast<uint>(retCode), ovms::Status(retCode).string(), counter);
+                SPDLOG_DEBUG("Create:[{}]={}:{}", static_cast<uint>(retCode), ovms::Status(retCode).string(), counter);
             }
         }
         for (auto& [retCode, counter] : executePipelineRetCodesCounters) {
             if (counter > 0) {
-                SPDLOG_TRACE("Execute:[{}]={}:{}", static_cast<uint>(retCode), ovms::Status(retCode).string(), counter);
+                SPDLOG_DEBUG("Execute:[{}]={}:{}", static_cast<uint>(retCode), ovms::Status(retCode).string(), counter);
             }
         }
-        SPDLOG_INFO("Executed: {} inferences", stressIterationsLimit - stressIterationsCounter);
         EXPECT_GT(stressIterationsCounter, 0) << "Reaching 0 means that we might not test enough \"after config change\" operation was applied";
+        std::stringstream ss;
+        ss << "Executed: " << stressIterationsLimit - stressIterationsCounter << " inferences by thread id: " << std::this_thread::get_id() << std::endl;
+        SPDLOG_INFO(ss.str());
     }
 };
 
