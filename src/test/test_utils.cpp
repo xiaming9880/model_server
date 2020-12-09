@@ -54,7 +54,7 @@ ovms::tensor_map_t prepareTensors(
     return result;
 }
 
-void checkResponse(const std::string outputName,
+void checkDummyResponse(const std::string outputName,
     const std::vector<float>& requestData,
     PredictRequest& request, PredictResponse& response, int seriesLength, int batchSize) {
     ASSERT_EQ(response.outputs().count(outputName), 1);

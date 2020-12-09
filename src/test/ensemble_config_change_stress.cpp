@@ -540,7 +540,7 @@ public:
                         (allowedExecuteResults.find(executePipelineStatus.getCode()) != allowedExecuteResults.end()))
                 << executePipelineStatus.string() << "\n";
             if (executePipelineStatus.ok()) {
-                checkResponse(pipelineOutputName, requestData, request, response, 1);
+                checkDummyResponse(pipelineOutputName, requestData, request, response, 1);
             }
             if (::testing::Test::HasFailure()) {
                 SPDLOG_INFO("Earlier fail detected. Stopping execution");
