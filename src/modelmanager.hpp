@@ -291,6 +291,8 @@ public:
         std::shared_ptr<model_versions_t>& versionsToStartIn);
 
     static std::shared_ptr<FileSystem> getFilesystem(const std::string& basePath);
+
+protected:
     /**
      * @brief Reads models from configuration file
      * 

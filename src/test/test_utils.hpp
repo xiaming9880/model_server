@@ -144,6 +144,16 @@ public:
         models.clear();
         spdlog::info("Destructor of modelmanager(Enabled one). Models #:{}", models.size());
     }
+    ovms::Status loadConfig(const std::string& jsonFilename) {
+        return ModelManager::loadConfig(jsonFilename);
+    }
+
+    /**
+     * @brief Updates OVMS configuration with cached configuration file. Will check for newly added model versions
+     */
+    void updateConfigurationWithoutConfigFile() {
+        ModelManager::updateConfigurationWithoutConfigFile();
+    }
 };
 class TestWithTempDir : public ::testing::Test {
 protected:
