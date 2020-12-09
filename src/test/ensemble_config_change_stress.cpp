@@ -14,12 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //*****************************************************************************
-
-#include <cstdio>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <stdlib.h>
 
 #include "../localfilesystem.hpp"
 #include "../logging.hpp"
@@ -30,6 +26,7 @@
 #include "../prediction_service_utils.hpp"
 #include "../status.hpp"
 #include "../timer.hpp"
+
 #include "test_utils.hpp"
 
 using namespace ovms;
