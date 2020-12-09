@@ -23,7 +23,7 @@ using tensorflow::serving::PredictResponse;
 void waitForOVMSConfigReload(ovms::ModelManager& manager) {
     // This is effectively multiplying by 1.2 to have 1 config reload in between
     // two test steps
-    const float WAIT_MULTIPLIER_FACTOR = 1.1;
+    const float WAIT_MULTIPLIER_FACTOR = 1.2;
     const uint waitTime = WAIT_MULTIPLIER_FACTOR * manager.getWatcherIntervalSec() * 1000;
     std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
 }
