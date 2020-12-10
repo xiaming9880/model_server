@@ -130,7 +130,6 @@ cc_library(
         "SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG"
     ],
     copts = [
-        "-Wall",
         "-Wno-unknown-pragmas",
         "-Werror",
     ],
@@ -232,7 +231,6 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
     copts = [
-        "-Wall",
         "-Wno-unknown-pragmas",
         "-Werror",
     ],
